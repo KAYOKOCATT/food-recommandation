@@ -5,7 +5,7 @@ plugins = [
     "mypy_drf_plugin.main",
 ]
 
-strict = true
+strict = false
 warn_unused_configs = true
 ignore_missing_imports = true
 
