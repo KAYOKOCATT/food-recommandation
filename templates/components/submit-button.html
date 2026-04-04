@@ -1,0 +1,22 @@
+{# Submit Button Component - Reusable submit button with loading state #}
+{% comment %}
+  Usage:
+  {% include 'components/submit-button.html' with 
+    button_text='Login' 
+    button_loading_text='Logging in...'
+    button_class='btn-success'
+  %}
+{% endcomment %}
+
+<button 
+  class="btn {{ button_class|default:'btn-primary' }} btn-block waves-effect waves-light"
+  type="submit"
+  :disabled="isSubmitting">
+  
+  <span x-show="!isSubmitting">{{ button_text|default:'Submit' }}</span>
+  
+  <span x-show="isSubmitting">
+    <i class="mdi mdi-loading mdi-spin"></i> 
+    {{ button_loading_text|default:'Submitting...' }}
+  </span>
+</button>

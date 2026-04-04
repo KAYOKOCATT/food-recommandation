@@ -38,11 +38,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'apps.users',
+    'apps.users',  # 用户模块
+    'django_htmx',  # 第三方-HTMX增强
+    'compressor',  # 第三方-SCSS/JS压缩
+
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # 第三方
+    "django_htmx.middleware.HtmxMiddleware",  # 第三方
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -79,7 +84,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'food_recommend',
         'USER': 'root',
-        'PASSWORD': '123456',
+        'PASSWORD': '5247',
         'HOST': 'localhost',
         'PORT': '3306',
     }
@@ -121,6 +126,35 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static')
+STATIC_ROOT: Path = BASE_DIR / 'staticfiles'  # 生产收集目录
+STATICFILES_DIRS: list[Path] = [
+    BASE_DIR / 'static' / 'src',  # 前端源代码目录
 ]
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Django Compressor
+COMPRESS_ENABLED = True
+COMPRESS_OFFLINE = not DEBUG  # 生产环境预编译
+COMPRESS_PRECOMPILERS = (
+    # 添加对 JavaScript 模块的支持
+    ('text/x-scss', 'django_libsass.SassCompiler'),
+    ('text/javascript', 'uglifyjs -o {outfile}'),
+    ('application/javascript', 'uglifyjs -o {outfile}'),
+    ('module', None),  # 让 module 类型不被压缩处理
+)
+COMPRESS_CSS_FILTERS = [
+    # creates absolute urls from relative ones
+    'compressor.filters.css_default.CssAbsoluteFilter',
+    # css minimizer
+    'compressor.filters.cssmin.CSSMinFilter'
+]
+COMPRESS_JS_FILTERS = [
+    'compressor.filters.jsmin.JSMinFilter'
+]
+
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'compressor.finders.CompressorFinder'  # 关键：让 compressor 能找到压缩后的文件
+)

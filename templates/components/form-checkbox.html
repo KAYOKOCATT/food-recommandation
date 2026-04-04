@@ -1,0 +1,22 @@
+{# Form Checkbox Component - Reusable checkbox input #}
+{% comment %}
+  Usage:
+  {% include 'components/form-checkbox.html' with 
+    field_name='remember' 
+    field_label='Remember me'
+    field_id='remember_me'
+  %}
+{% endcomment %}
+
+<div class="custom-control custom-checkbox">
+  <input 
+    type="checkbox"
+    class="custom-control-input"
+    id="{{ field_id|default:field_name }}"
+    name="{{ field_name }}"
+    x-model="formData.{{ field_name }}">
+  
+  <label class="custom-control-label" for="{{ field_id|default:field_name }}">
+    {{ field_label }}
+  </label>
+</div>

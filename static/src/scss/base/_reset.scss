@@ -1,0 +1,10 @@
+/**
+ * 基础重置样式
+ */
+
+// 简化的重置样式（Bootstrap 已提供基础重置）
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}

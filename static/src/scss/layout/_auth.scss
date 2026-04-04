@@ -1,0 +1,41 @@
+/**
+ * 认证页面布局样式
+ */
+
+.auth-page {
+  min-height: 100vh;
+  @include flex-center;
+  background-color: $bg-primary;
+  background-image: $bg-pattern;
+  background-size: cover;
+  background-position: center;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 500px;
+  padding: $spacer * 2;
+}
+
+.auth-card {
+  background: $white;
+  border-radius: $border-radius-lg;
+  box-shadow: $box-shadow-lg;
+  padding: $spacer * 3;
+}
+
+.auth-title {
+  text-align: center;
+  color: $white;
+  margin-bottom: $spacer * 3;
+  font-size: 2.5rem;
+  font-weight: $font-weight-bold;
+}
+
+.auth-subtitle {
+  text-align: center;
+  margin-bottom: $spacer * 2;
+  font-size: 1.5rem;
+  font-weight: $font-weight-semibold;
+  color: $gray-900;
+}

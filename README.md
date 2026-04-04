@@ -88,6 +88,15 @@ pylint 的 vscode 配置如下，请修改为自己的目录：
 ]
 ```
 
+前端类型提示（实际引用lib/esm.js）：
+
+```bash
+npm install -D @types/alpinejs
+npm install -D htmx.org
+```
+
+见 `/global.d.ts`
+
 ### 数据库配置
 
 ```bash

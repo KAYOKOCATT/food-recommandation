@@ -1,0 +1,74 @@
+{% load django_htmx %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="keywords">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+          content="{% block meta_description %}餐饮个性化推荐系统{% endblock meta_description %}">
+    <title>
+      {% block title %}
+        餐饮推荐系统
+      {% endblock title %}
+    </title>
+    {# Legacy CSS - 保留用于向后兼容 #}
+    <link href="{% static 'css/bootstrap.min.css' %}"
+          rel="stylesheet"
+          type="text/css">
+    <link href="{% static 'css/icons.min.css' %}"
+          rel="stylesheet"
+          type="text/css">
+    <link href="{% static 'css/app.min.css' %}"
+          rel="stylesheet"
+          type="text/css">
+    {% htmx_script %}
+    {% load compress %}
+    {# SCSS Compilation via django-compressor #}
+    {% compress css %}
+      <!-- #region source: scss/main.scss -->
+      <link rel="stylesheet"
+            type="text/x-scss"
+            href="{% static 'src/scss/main.scss' %}">
+      <!-- #endregion -->
+    {% endcompress %}
+  </head>
+  <body class="{% block body_class %}{% endblock body_class %}"
+        {% block body_attrs %}
+        {% endblock body_attrs %}
+        hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
+    {# HTMX 事件监听器 - 用于首屏加载状态 #}
+    <div class="htmx-indicator">
+      <div class="loading-spinner" role="status" aria-live="polite">
+        <span class="sr-only">Loading...</span>
+      </div>
+    </div>
+    {# Navigation Header #}
+    <header class="site-header">
+      <nav class="navbar">
+        <div class="container">
+          <div class="navbar__content">
+            <a href="/" class="navbar__brand">
+              <span class="navbar__logo">📊</span>
+              <span class="navbar__title">餐饮推荐</span>
+            </a>
+          </div>
+        </div>
+      </nav>
+    </header>
+    {# Main content area #}
+    <main class="site-main" role="main">
+      {% block content %}
+      {% endblock content %}
+    </main>
+    {# Footer #}
+    <footer class="site-footer">
+    </footer>
+    {# 页面特定的 JavaScript 模块 #}
+    {% block scripts %}
+    {% endblock scripts %}
+    {# ES Modules - Modern JavaScript #}
+    <script type="module" src="{% static 'src/js/main.js' %}"></script>
+  </body>
+</html>

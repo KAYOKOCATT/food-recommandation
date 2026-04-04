@@ -1,0 +1,29 @@
+{# Form Input Component - Reusable input field with validation #}
+{% comment %}
+  Usage:
+  {% include 'components/form-input.html' with 
+    field_name='username' 
+    field_type='text' 
+    field_label='Username'
+    field_placeholder='Enter username'
+    required=True
+  %}
+{% endcomment %}
+<div class="form-group form-group-custom mb-4">
+  <input type="{{ field_type|default:'text' }}"
+         class="form-control"
+         :class="{ 'is-invalid': errors.{{ field_name }} }"
+         id="id_{{ field_name }}"
+         name="{{ field_name }}"
+         x-model="formData.{{ field_name }}"
+         @blur="validateField('{{ field_name }}')"
+         @focus="clearError('{{ field_name }}')"
+         {% if required %}required{% endif %}
+         placeholder="{{ field_placeholder|default:'text' }}">
+  <div class="invalid-feedback"
+       x-show="errors.{{ field_name }}"
+       x-text="errors.{{ field_name }}"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0 transform scale-90"
+       x-transition:enter-end="opacity-100 transform scale-100"></div>
+</div>

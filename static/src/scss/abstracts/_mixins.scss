@@ -1,0 +1,163 @@
+/**
+ * SCSS Mixins
+ * 
+ * 可复用的样式混合器
+ */
+
+// =============================================================================
+// 响应式断点
+// =============================================================================
+
+/**
+ * 媒体查询混合器
+ * 
+ * @param {string} $breakpoint - 断点名称 (sm, md, lg, xl, xxl)
+ * 
+ * @example
+ * .element {
+ *   font-size: 14px;
+ *   
+ *   @include respond-to(md) {
+ *     font-size: 16px;
+ *   }
+ * }
+ */
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == sm {
+    @media (min-width: $breakpoint-sm) { @content; }
+  }
+  @else if $breakpoint == md {
+    @media (min-width: $breakpoint-md) { @content; }
+  }
+  @else if $breakpoint == lg {
+    @media (min-width: $breakpoint-lg) { @content; }
+  }
+  @else if $breakpoint == xl {
+    @media (min-width: $breakpoint-xl) { @content; }
+  }
+  @else if $breakpoint == xxl {
+    @media (min-width: $breakpoint-xxl) { @content; }
+  }
+}
+
+// =============================================================================
+// 弹性布局
+// =============================================================================
+
+/**
+ * Flexbox 居中混合器
+ */
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/**
+ * Flexbox 行布局
+ */
+@mixin flex-row($align: stretch, $justify: flex-start) {
+  display: flex;
+  flex-direction: row;
+  align-items: $align;
+  justify-content: $justify;
+}
+
+/**
+ * Flexbox 列布局
+ */
+@mixin flex-column($align: stretch, $justify: flex-start) {
+  display: flex;
+  flex-direction: column;
+  align-items: $align;
+  justify-content: $justify;
+}
+
+// =============================================================================
+// 文本
+// =============================================================================
+
+/**
+ * 文本溢出省略号
+ * 
+ * @param {number} $lines - 行数，默认 1 行
+ */
+@mixin text-ellipsis($lines: 1) {
+  @if $lines == 1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  } @else {
+    display: -webkit-box;
+    -webkit-line-clamp: $lines;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+// =============================================================================
+// 动画
+// =============================================================================
+
+/**
+ * 过渡动画混合器
+ * 
+ * @param {list} $properties - 要过渡的属性列表
+ * @param {time} $duration - 动画时长
+ * @param {string} $timing - 缓动函数
+ */
+@mixin transition($properties, $duration: 0.2s, $timing: ease-in-out) {
+  $transitions: ();
+  
+  @each $property in $properties {
+    $transitions: append($transitions, $property $duration $timing, comma);
+  }
+  
+  transition: $transitions;
+}
+
+// =============================================================================
+// 其他
+// =============================================================================
+
+/**
+ * 清除浮动
+ */
+@mixin clearfix {
+  &::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
+/**
+ * 隐藏元素（保留占位）
+ */
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/**
+ * 按钮重置
+ */
+@mixin button-reset {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  
+  &:focus {
+    outline: none;
+  }
+}

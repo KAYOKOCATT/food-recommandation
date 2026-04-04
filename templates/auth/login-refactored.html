@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+  User Login - Food Recommendation System
+{% endblock title %}
+{% block body_class %}
+  bg-primary bg-pattern
+{% endblock body_class %}
+{% block content %}
+  {# Home Button #}
+  <div class="home-btn d-none d-sm-block">
+    <a href="/"><i class="mdi mdi-home-variant h2 text-white"></i></a>
+  </div>
+  {# Login Page Container #}
+  <div class="account-pages my-5 pt-sm-5">
+    <div class="container">
+      {# Page Header #}
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="text-center mb-5">
+            <h5 class="font-size-100 text-white mb-4">Food Recommendation System</h5>
+          </div>
+        </div>
+      </div>
+      {# Login Form Card #}
+      <div class="row justify-content-center">
+        <div class="col-xl-5 col-sm-8">
+          <div class="card">
+            <div class="card-body p-4">
+              <div class="p-2">
+                <h5 class="mb-5 text-center">Login</h5>
+                {# Alpine.js Form Component #}
+                <div x-data="onMountloginForm">
+                  <form hx-post="/api/v1/users/login/"
+                        hx-trigger="submit"
+                        hx-swap="none"
+                        @submit.prevent="handleSubmit"
+                        @htmx:before-request="isSubmitting = true"
+                        @htmx:after-request="isSubmitting = false">
+                    {% csrf_token %}
+                    {# Username Field - Using Component #}
+                    {% include "components/form-input.html" with field_name="username" field_type="text" field_placeholder="Username" required="True" %}
+                    {# Password Field - Using Component #}
+                    {% include "components/form-input.html" with field_name="password" field_type="password" field_placeholder="Password" required="True" %}
+                    {# Remember Me & Forgot Password #}
+                    <div class="row">
+                      <div class="col-md-6">
+                        {% include "components/form-checkbox.html" with field_name="remember" field_label="Remember me" field_id="customControlInline" %}
+                      </div>
+                      <div class="col-md-6">
+                        <div class="text-md-right mt-3 mt-md-0">
+                          <a href="#" class="text-muted">
+                            <i class="mdi mdi-lock"></i> Forgot password?
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                    {# Submit Button - Using Component #}
+                    <div class="mt-4">
+                      {% include "components/submit-button.html" with button_text="Login" button_loading_text="Logging in..." button_class="btn-success" %}
+                    </div>
+                    {# Register Link #}
+                    <div class="mt-4 text-center">
+                      <a href="{% url "register" %}" class="text-muted">
+                        <i class="mdi mdi-account-circle mr-1"></i>Create a new account
+                      </a>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

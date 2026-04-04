@@ -1,0 +1,37 @@
+/**
+ * 实用工具类
+ */
+
+// 文本对齐
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+// 显示/隐藏
+.d-none {
+  display: none !important;
+}
+
+.d-block {
+  display: block !important;
+}
+
+// 间距工具
+@each $key, $value in $spacers {
+  .mt-#{$key} { margin-top: $value; }
+  .mb-#{$key} { margin-bottom: $value; }
+  .ml-#{$key} { margin-left: $value; }
+  .mr-#{$key} { margin-right: $value; }
+  .pt-#{$key} { padding-top: $value; }
+  .pb-#{$key} { padding-bottom: $value; }
+  .pl-#{$key} { padding-left: $value; }
+  .pr-#{$key} { padding-right: $value; }
+}

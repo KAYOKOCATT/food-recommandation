@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}User Registration - Food Recommendation System{% endblock title %}
+
+{% block body_class %}bg-primary bg-pattern{% endblock body_class %}
+
+{% block content %}
+  {# Home Button #}
+  <div class="home-btn d-none d-sm-block">
+    <a href="/"><i class="mdi mdi-home-variant h2 text-white"></i></a>
+  </div>
+
+  {# Registration Page Container #}
+  <div class="account-pages my-5 pt-sm-5">
+    <div class="container">
+      
+      {# Page Header #}
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="text-center mb-5">
+            <h5 class="font-size-100 text-white mb-4">Food Recommendation System</h5>
+          </div>
+        </div>
+      </div>
+
+      {# Registration Form Card #}
+      <div class="row justify-content-center">
+        <div class="col-xl-5 col-sm-8">
+          <div class="card">
+            <div class="card-body p-4">
+              <div class="p-2">
+                <h5 class="mb-5 text-center">Create New Account</h5>
+
+                {# Alpine.js Register Form Component #}
+                <div x-data="registerForm">
+                  <form hx-post="/myapp/register/"
+                        hx-trigger="submit"
+                        hx-swap="none"
+                        @submit.prevent="handleSubmit"
+                        @htmx:before-request="isSubmitting = true"
+                        @htmx:after-request="isSubmitting = false">
+                    {% csrf_token %}
+
+                    {# Username Field - Using Reusable Component #}
+                    {% include "components/form-input.html" with field_name="username" field_type="text" field_placeholder="Username (3-20 characters)" required=True %}
+
+                    {# Password Field - Using Reusable Component #}
+                    {% include "components/form-input.html" with field_name="password" field_type="password" field_placeholder="Password (at least 6 characters)" required=True %}
+
+                    {# Confirm Password Field - Using Reusable Component #}
+                    {% include "components/form-input.html" with field_name="confirmPassword" field_type="password" field_placeholder="Confirm Password" required=True %}
+
+                    {# Phone Number Field - Using Reusable Component #}
+                    {% include "components/form-input.html" with field_name="phone" field_type="tel" field_placeholder="Phone Number (11 digits)" required=True %}
+
+                    {# Email Field - Using Reusable Component #}
+                    {% include "components/form-input.html" with field_name="email" field_type="email" field_placeholder="Email Address" required=True %}
+
+                    {# Terms of Service Agreement #}
+                    <div class="form-group form-group-custom mb-4">
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox"
+                               class="custom-control-input"
+                               id="agreeToTerms"
+                               x-model="formData.agreeToTerms"
+                               required>
+                        <label class="custom-control-label" for="agreeToTerms">
+                          I agree to the 
+                          <a href="#" class="text-primary">Terms of Service</a> 
+                          and 
+                          <a href="#" class="text-primary">Privacy Policy</a>
+                        </label>
+                      </div>
+                    </div>
+
+                    {# Submit Button - Using Reusable Component #}
+                    <div class="mt-4">
+                      <button class="btn btn-success btn-block waves-effect waves-light"
+                              type="submit"
+                              :disabled="isSubmitDisabled">
+                        <span x-show="!isSubmitting">Register</span>
+                        <span x-show="isSubmitting">
+                          <i class="mdi mdi-loading mdi-spin"></i> Registering...
+                        </span>
+                      </button>
+                    </div>
+
+                    {# Login Link #}
+                    <div class="mt-4 text-center">
+                      <p class="mb-0">
+                        Already have an account? 
+                        <a href="{% url 'login' %}" class="text-primary font-weight-medium">Login Now</a>
+                      </p>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{# 
+  Note: No inline scripts needed!
+  The registerForm component is automatically loaded from main.js
+  which imports register-form.js module
+  
+  Architecture benefits:
+  - Separation of concerns (HTML/JS/CSS)
+  - Reusable components
+  - Easy testing and maintenance
+  - Better IDE support
+  - Cacheable JS modules
+#}

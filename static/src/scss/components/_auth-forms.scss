@@ -1,0 +1,249 @@
+/**
+ * Authentication Forms Styles
+ * Modern SCSS for login/register forms
+ * Following BEM naming convention
+ */
+
+// ==================== Variables ====================
+
+$form-input-border-color: #ced4da;
+$form-input-focus-color: #80bdff;
+$form-input-error-color: #dc3545;
+$form-input-success-color: #28a745;
+$form-transition: all 0.3s ease;
+
+// ==================== Form Container ====================
+
+.account-pages {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  
+  .container {
+    width: 100%;
+  }
+}
+
+// ==================== Form Group ====================
+
+.form-group-custom {
+  position: relative;
+  
+  .form-control {
+    transition: $form-transition;
+    border-radius: 0.25rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+    
+    &:focus {
+      border-color: $form-input-focus-color;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      outline: 0;
+    }
+    
+    // Error state
+    &.is-invalid {
+      border-color: $form-input-error-color;
+      padding-right: calc(1.5em + 0.75rem);
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right calc(0.375em + 0.1875rem) center;
+      background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+      
+      &:focus {
+        border-color: $form-input-error-color;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+      }
+    }
+    
+    // Success state (optional)
+    &.is-valid {
+      border-color: $form-input-success-color;
+      
+      &:focus {
+        border-color: $form-input-success-color;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+      }
+    }
+    
+    // Placeholder styling
+    &::placeholder {
+      color: #6c757d;
+      opacity: 0.7;
+    }
+  }
+  
+  // Invalid feedback
+  .invalid-feedback {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: $form-input-error-color;
+    
+    // Alpine.js transition support
+    &[x-show] {
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+  }
+}
+
+// ==================== Checkbox Custom Styling ====================
+
+.custom-control-input {
+  &:checked ~ .custom-control-label::before {
+    border-color: #28a745;
+    background-color: #28a745;
+  }
+  
+  &:focus ~ .custom-control-label::before {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+}
+
+.custom-control-label {
+  font-size: 0.875rem;
+  color: #495057;
+  cursor: pointer;
+  
+  a {
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+// ==================== Button Styling ====================
+
+.btn {
+  transition: $form-transition;
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+  
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  
+  // Loading state
+  .mdi-loading {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ==================== Card Styling ====================
+
+.card {
+  border: none;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  
+  .card-body {
+    padding: 2rem;
+  }
+}
+
+// ==================== Home Button ====================
+
+.home-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 10;
+  
+  a {
+    display: inline-block;
+    width: 2.5rem;
+    height: 2.5rem;
+    line-height: 2.5rem;
+    text-align: center;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: $form-transition;
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
+    }
+    
+    i {
+      vertical-align: middle;
+    }
+  }
+}
+
+// ==================== Responsive Design ====================
+
+@media (max-width: 576px) {
+  .account-pages {
+    padding: 1rem;
+  }
+  
+  .card .card-body {
+    padding: 1.5rem;
+  }
+  
+  .form-group-custom .form-control {
+    font-size: 0.875rem;
+  }
+  
+  .home-btn {
+    top: 1rem;
+    right: 1rem;
+  }
+}
+
+// ==================== Dark Mode Support (Optional) ====================
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    background-color: #2d3748;
+    color: #e2e8f0;
+    
+    .form-control {
+      background-color: #4a5568;
+      border-color: #4a5568;
+      color: #e2e8f0;
+      
+      &::placeholder {
+        color: #a0aec0;
+      }
+      
+      &:focus {
+        background-color: #4a5568;
+        border-color: #63b3ed;
+      }
+    }
+  }
+  
+  .custom-control-label {
+    color: #e2e8f0;
+  }
+}
+
+// ==================== Accessibility ====================
+
+// Focus visible for keyboard navigation
+*:focus-visible {
+  outline: 2px solid $form-input-focus-color;
+  outline-offset: 2px;
+}
+
+// Reduce motion for users who prefer it
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

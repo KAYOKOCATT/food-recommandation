@@ -20,5 +20,9 @@
   "bugs": {
     "url": "https://github.com/KAYOKOCATT/food-recommandation/issues"
   },
-  "homepage": "https://github.com/KAYOKOCATT/food-recommandation#readme"
+  "homepage": "https://github.com/KAYOKOCATT/food-recommandation#readme",
+  "devDependencies": {
+    "@types/alpinejs": "^3.13.11",
+    "htmx.org": "^2.0.8"
+  }
 }
