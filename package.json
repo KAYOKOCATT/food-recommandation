@@ -1,0 +1,24 @@
+{
+  "name": "sc_food_rec",
+  "version": "1.0.0",
+  "description": "本项目是一个面向餐饮场景的个性化推荐系统，旨在解决现有推荐系统在准确性、个性化和实时性方面的不足。系统采用**协同过滤算法**作为核心推荐引擎，结合用户行为数据（收藏、浏览、评分）和商家多维属性（菜系类型、用户评分、地理位置），为用户提供精准的餐厅和菜品推荐。",
+  "scripts": {
+    "dev": "python manage.py runserver",
+    "build": "python manage.py collectstatic --noinput && python manage.py compress",
+    "lint:js": "echo 'JSDoc validation - use VSCode for type checking'",
+    "lint:css": "echo 'SCSS linting - consider adding stylelint'",
+    "format": "echo 'Code formatting - consider adding prettier'",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KAYOKOCATT/food-recommandation.git"
+  },
+  "keywords": [],
+  "author": "sc",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/KAYOKOCATT/food-recommandation/issues"
+  },
+  "homepage": "https://github.com/KAYOKOCATT/food-recommandation#readme"
+}

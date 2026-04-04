@@ -8,39 +8,42 @@
 
 ## 技术栈
 
-| 层级 | 技术选型 | 说明 |
-|------|----------|------|
-| 后端框架 | Django 4.x | Python Web 开发框架，提供模板引擎渲染 |
-| 数据库 | MySQL 8.0 | 业务数据持久化存储 |
-| 缓存层 | Redis | 推荐结果缓存、热点数据加速 |
-| 数据处理 | Pandas + NumPy | 数据预处理与特征工程 |
-| 算法库 | Scikit-learn | 协同过滤算法实现 |
-| 前端 | HTML5 + CSS3 + JavaScript | 模板引擎之外实现轻量交互 |
-| 可视化 | ECharts | 推荐效果数据可视化 |
+| 层级     | 技术选型                  | 说明                                  |
+| -------- | ------------------------- | ------------------------------------- |
+| 后端框架 | Django 4.x                | Python Web 开发框架，提供模板引擎渲染 |
+| 数据库   | MySQL 8.0                 | 业务数据持久化存储                    |
+| 缓存层   | Redis                     | 推荐结果缓存、热点数据加速            |
+| 数据处理 | Pandas + NumPy            | 数据预处理与特征工程                  |
+| 算法库   | Scikit-learn              | 协同过滤算法实现                      |
+| 前端     | HTML5 + CSS3 + JavaScript | 模板引擎之外实现轻量交互              |
+| 可视化   | ECharts                   | 推荐效果数据可视化                    |
 
 ## 系统架构
-
 
 ## 核心功能
 
 ### 1. 用户画像构建
+
 - 收藏频率分析
 - 口味偏好标签提取
 - 消费能力评估
 - 地理位置偏好
 
 ### 2. 商家特征建模
+
 - 菜系类型分类
 - 用户评分聚合
 - 地理位置信息
 - 热门程度计算
 
 ### 3. 推荐算法
+
 - **基于用户的协同过滤** (User-Based CF)：找到相似用户群体，推荐他们喜欢的餐厅
 - **基于物品的协同过滤** (Item-Based CF)：根据用户历史偏好，推荐相似餐厅/菜品
 - **混合推荐策略**：结合多种算法结果，提升推荐多样性
 
 ### 4. 推荐服务
+
 - 个性化首页推荐
 - "猜你喜欢" 智能推荐
 - 相似餐厅推荐
@@ -51,11 +54,9 @@
 ### 核心数据表
 
 | 表名 | 说明 |
-|------|------|
-
+| ---- | ---- |
 
 ### E-R 关系
-
 
 ## 快速开始
 
@@ -68,11 +69,29 @@
 ### 安装依赖
 
 ```bash
+python -m venv .venv
+pip install -r requirements.txt
+```
+
+建议使用 **vscode** 作为开发环境，注意 mypy & pylint & djlint & pylance 是否启用。
+
+pylint 的 vscode 配置如下，请修改为自己的目录：
+
+```json
+"pylint.args": [
+    "--load-plugins",
+    "pylint_django",
+    "--load-plugins",
+    "pylint_django.checkers.migrations",
+    "--django-settings-module=${YOUR_APP_NAME}.settings",
+    "--disable=C0115,C0116,E1136,E0307"
+]
 ```
 
 ### 数据库配置
 
 ```bash
+
 ```
 
 ### 启动服务
@@ -114,8 +133,6 @@ restaurant-recommendation/
 
 ### 协同过滤核心逻辑
 
-
-
 ### 算法评估指标
 
 - **准确率 (Precision)**：推荐结果中用户实际喜欢的比例
@@ -126,17 +143,17 @@ restaurant-recommendation/
 
 本项目在**算法验证与系统设计**的目标导向下，采用了轻量级技术栈：
 
-| 论文提及 | 实际采用 | 说明 |
-|----------|----------|------|
-| Spark / PySpark | Pandas + NumPy | 单机数据处理已满足实验需求 |
-| Spark MLlib ALS | Scikit-learn / Surprise | 轻量级协同过滤实现 |
-| HBase | MySQL | 结构化数据关系型存储更简便 |
-| Flink 实时计算 | Django + Redis 缓存 | 准实时推荐通过缓存优化实现 |
+| 论文提及        | 实际采用                | 说明                       |
+| --------------- | ----------------------- | -------------------------- |
+| Spark / PySpark | Pandas + NumPy          | 单机数据处理已满足实验需求 |
+| Spark MLlib ALS | Scikit-learn / Surprise | 轻量级协同过滤实现         |
+| HBase           | MySQL                   | 结构化数据关系型存储更简便 |
+| Flink 实时计算  | Django + Redis 缓存     | 准实时推荐通过缓存优化实现 |
 
 **设计考量**：
+
 1. 毕设核心目标是验证算法思想，而非工程规模
 2. MySQL + Redis 足以支撑实验数据量的推荐服务
 3. 轻量级栈降低开发复杂度，聚焦推荐逻辑本身
 
 ## 参考资料
-
