@@ -30,13 +30,8 @@
               <div class="p-2">
                 <h5 class="mb-5 text-center">Login</h5>
                 {# Alpine.js Form Component #}
-                <div x-data="onMountloginForm">
-                  <form hx-post="/api/v1/users/login/"
-                        hx-trigger="submit"
-                        hx-swap="none"
-                        @submit.prevent="handleSubmit"
-                        @htmx:before-request="isSubmitting = true"
-                        @htmx:after-request="isSubmitting = false">
+                <div x-data="loginForm()">
+                  <form @submit.prevent="handleSubmit">
                     {% csrf_token %}
                     {# Username Field - Using Component #}
                     {% include "components/form-input.html" with field_name="username" field_type="text" field_placeholder="Username" required="True" %}

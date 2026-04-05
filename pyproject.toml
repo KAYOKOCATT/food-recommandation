@@ -10,4 +10,4 @@ warn_unused_configs = true
 ignore_missing_imports = true
 
 [tool.django-stubs]
-django_settings_module = "Food.settings"
+django_settings_module = "config.settings"

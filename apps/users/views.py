@@ -22,35 +22,41 @@
         path('register/', register, name='register'),
     ]
 """
+import json
+import re
+from django import forms
 from django.shortcuts import render
 from django.http import HttpRequest, JsonResponse, HttpResponse
 from django.contrib.auth.hashers import check_password
-from typing import Union, Optional
+from typing import Any, Union, Optional
+
+from django.views.decorators.csrf import csrf_exempt
 
 from apps.users.models import User
+
 
 def login(request: HttpRequest) -> Union[JsonResponse, HttpResponse]:
     """
     用户登录视图
-    
+
     处理用户登录请求，支持 GET 和 POST 方法：
     - GET: 显示登录页面
     - POST: 处理登录表单提交
-    
+
     参数：
         request (HttpRequest): Django HTTP 请求对象
             - POST.username: 用户名
             - POST.password: 密码
-    
+
     返回：
         Union[JsonResponse, HttpResponse]:
             - GET 请求: 返回登录页面 (HTML)
             - POST 成功: 返回包含 user_id 和 username 的 JSON
             - POST 失败: 返回错误信息的 JSON
-    
+
     会话数据：
         - session['user_id']: 登录成功后保存用户ID
-    
+
     示例：
         # 成功的登录请求
         POST /login/
@@ -58,25 +64,25 @@ def login(request: HttpRequest) -> Union[JsonResponse, HttpResponse]:
             "username": "john_doe",
             "password": "secret123"
         }
-        
+
         响应：
         {
             "user_id": 1,
             "username": "john_doe"
         }
-        
+
         # 失败的登录请求
         POST /login/
         {
             "username": "wrong_user",
             "password": "wrong_pass"
         }
-        
+
         响应 (HTTP 401):
         {
             "error": "用户名或密码错误"
         }
-    
+
     状态码：
         - 200: 成功或显示页面
         - 400: 参数验证失败
@@ -84,119 +90,106 @@ def login(request: HttpRequest) -> Union[JsonResponse, HttpResponse]:
     """
 
     if request.method == 'POST':
-        username: Optional[str] = request.POST.get('username')
-        password: Optional[str] = request.POST.get('password')
-    
+        data: dict[str, str] = json.loads(request.body)
+        username: Optional[str] = data.get('username')
+        password: Optional[str] = data.get('password')
         if not username or not password:
-            return JsonResponse({'error': '用户名和密码不能为空'}, status=400)
-    
+            return JsonResponse({
+                'code': 500,
+                'data': {},
+                'msg': '用户名和密码不能为空'
+            }, status=200)
+
         user: Optional[User] = User.objects.filter(username=username).first()
-        
+
         if user and check_password(password, user.password):
             request.session['user_id'] = user.id
-            return JsonResponse({'user_id': user.id, 'username': user.username})
+            return JsonResponse({
+                'code': 200,
+                'data': {
+                    'user_id': user.id,
+                    'username': user.username
+                },
+                'msg': '登录成功'
+            }, status=200)
         else:
-            return JsonResponse({'error': '用户名或密码错误'}, status=401)
-    
-    return render(request, 'auth-login.html')
+            return JsonResponse({
+                'code': 500,
+                'data': {},
+                'msg': '用户名或密码错误'
+            }, status=200)
 
-def register(request: HttpRequest) -> Union[JsonResponse, HttpResponse]:
-    """
-    用户注册视图
-    
-    处理用户注册请求，支持 GET 和 POST 方法：
-    - GET: 显示注册页面
-    - POST: 处理注册表单提交，创建新用户
-    
-    参数：
-        request (HttpRequest): Django HTTP 请求对象
-            - POST.username: 用户名（必填，唯一）
-            - POST.password: 密码（必填）
-            - POST.phone: 手机号（必填，唯一，11位）
-            - POST.email: 电子邮箱（必填，唯一）
-    
-    返回：
-        Union[JsonResponse, HttpResponse]:
-            - GET 请求: 返回注册页面 (HTML)
-            - POST 成功: 返回成功信息和 user_id 的 JSON
-            - POST 失败: 返回错误信息的 JSON
-    
-    安全性：
-        - 密码在保存时自动加密（参见 User.save() 方法）
-        - 所有唯一字段都会检查重复
-    
-    示例：
-        # 成功的注册请求
-        POST /register/
-        {
-            "username": "alice123",
-            "password": "secure_pass",
-            "phone": "13812345678",
-            "email": "alice@example.com"
-        }
-        
-        响应：
-        {
-            "success": "注册成功",
-            "user_id": 2
-        }
-        
-        # 失败的注册请求（手机号已存在）
-        POST /register/
-        {
-            "username": "bob456",
-            "password": "pass123",
-            "phone": "13812345678",  # 已存在的手机号
-            "email": "bob@example.com"
-        }
-        
-        响应 (HTTP 400):
-        {
-            "error": "该手机号已被注册"
-        }
-    
-    状态码：
-        - 200: 成功或显示页面
-        - 400: 参数验证失败或唯一性冲突
-    
-    注意事项：
-        - 所有字段都会进行存在性检查
-        - 用户名、手机号、邮箱必须唯一
-        - 密码建议前端先进行强度验证
-    """
+    return render(request, 'auth/login-refactored.html')
 
-    if request.method == 'POST':
-        username: str | None = request.POST.get('username')
-        password: str | None = request.POST.get('password')
-        phone: str | None = request.POST.get('phone')
-        email: str | None = request.POST.get('email')
-        
-        # 验证必填字段
-        if not username or not password or not phone or not email:
-            return JsonResponse({'error': '所有字段都不能为空'}, status=400)
-        
-        # 这里 username, password 等已经确认不是 None，可以直接使用
-        # 检查唯一性
+
+# ---------- 辅助函数：构建统一响应 ----------
+def api_response(code: int, msg: str, data=None, status: int = 200) -> JsonResponse:
+    return JsonResponse({
+        'code': code,
+        'msg': msg,
+        'data': data
+    }, status=status)
+
+# ---------- 表单验证器 ----------
+
+
+class RegisterForm(forms.Form):
+    username = forms.CharField(max_length=150, error_messages={'required': '用户名不能为空'})
+    password = forms.CharField(min_length=6, widget=forms.PasswordInput, error_messages={
+        'required': '密码不能为空',
+        'min_length': '密码长度至少6位'
+    })
+    phone = forms.CharField(max_length=11, error_messages={
+                            'required': '手机号不能为空'})
+    email = forms.EmailField(
+        error_messages={'required': '邮箱不能为空', 'invalid': '邮箱格式不正确'})
+
+    def clean_username(self):
+        username = self.cleaned_data['username']
         if User.objects.filter(username=username).exists():
-            return JsonResponse({'error': '用户名已存在'}, status=400)
-        
+            raise forms.ValidationError('用户名已存在')
+        return username
+
+    def clean_phone(self):
+        phone = self.cleaned_data['phone']
+        if not re.match(r'^1[3-9]\d{9}$', phone):
+            raise forms.ValidationError('手机号格式不正确')
         if User.objects.filter(phone=phone).exists():
-            return JsonResponse({'error': '该手机号已被注册'}, status=400)
-        
+            raise forms.ValidationError('该手机号已被注册')
+        return phone
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
         if User.objects.filter(email=email).exists():
-            return JsonResponse({'error': '该邮箱已被注册'}, status=400)
-        
-        # 创建用户（密码会自动加密）
+            raise forms.ValidationError('该邮箱已被注册')
+        return email
+
+# ---------- 视图 ----------
+
+
+@csrf_exempt   # JSON 请求建议豁免 CSRF，生产环境可替换为 Token 认证
+def register(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        form = RegisterForm(data)
+        if not form.is_valid():
+            first_error = next(iter(form.errors.values()))[0]
+            return api_response(code=4002, msg=first_error, data=form.errors)
+
+        # 3. 创建用户（密码自动哈希）
         user: User = User.objects.create(
-            username=username,
-            password=password,
-            phone=phone,
-            email=email
+            username=form.cleaned_data['username'],
+            password=form.cleaned_data['password'],
+            email=form.cleaned_data['email'],
+            phone=form.cleaned_data['phone']   # 假设 User 模型已扩展 phone 字段
         )
-        
-        return JsonResponse({
-            'success': '注册成功', 
-            'user_id': user.id
-        })
-        
-    return render(request, 'auth-register.html')
+
+        # 4. 成功响应
+        return api_response(
+            code=200,
+            msg='注册成功',
+            data={'user_id': user.id}
+        )
+
+    # GET 请求返回注册页面（保持原有逻辑）
+    return render(request, 'auth/register-refactored.html')

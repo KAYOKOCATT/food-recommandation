@@ -23,7 +23,26 @@
     <link href="{% static 'css/app.min.css' %}"
           rel="stylesheet"
           type="text/css">
-    {% htmx_script %}
+    {# HTMX CDN - Load first (no defer, blocking is OK for small script) #}
+    <script defer src="{% static '/src/lib/htmx.js' %}"></script>
+    {% comment %}
+      ALPINE.JS LOADING STRATEGY:
+      1. Load main.js as module first - it listens for 'alpine:init' and registers components
+      2. Then load Alpine with defer - it fires 'alpine:init' when ready
+      3. Alpine scans DOM and finds registered components
+    {% endcomment %}
+    <script type="module" src="{% static 'src/js/main.js' %}"></script>
+    {# DEBUG: Uncomment to verify Alpine loading order #}
+    <script>
+      document.addEventListener('alpine:init', () => {
+        console.log('[Alpine] alpine:init fired');
+      });
+      document.addEventListener('alpine:initialized', () => {
+        console.log('[Alpine] fully initialized');
+      });
+    </script>
+    {# Alpine.js CDN - Must load AFTER main.js (which listens for alpine:init) #}
+    <script defer src="{% static '/src/lib/alpine.js' %}"></script>
     {% load compress %}
     {# SCSS Compilation via django-compressor #}
     {% compress css %}
@@ -65,10 +84,5 @@
     {# Footer #}
     <footer class="site-footer">
     </footer>
-    {# 页面特定的 JavaScript 模块 #}
-    {% block scripts %}
-    {% endblock scripts %}
-    {# ES Modules - Modern JavaScript #}
-    <script type="module" src="{% static 'src/js/main.js' %}"></script>
   </body>
 </html>

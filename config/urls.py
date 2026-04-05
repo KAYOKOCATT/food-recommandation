@@ -20,6 +20,6 @@ from apps.users import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("myapp/",include('apps.users.urls')),
-    path('',views.login,name='login'),
+    path("api/v1/users/",include('apps.users.urls')),
+    path('',views.login,name='login'),  # 后期接登录要换
 ]

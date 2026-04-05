@@ -128,7 +128,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT: Path = BASE_DIR / 'staticfiles'  # 生产收集目录
 STATICFILES_DIRS: list[Path] = [
-    BASE_DIR / 'static' / 'src',  # 前端源代码目录
+    BASE_DIR / 'static'
 ]
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

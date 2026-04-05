@@ -2,6 +2,13 @@
  * @file Main JavaScript Entry Point
  * @description Modern ES Module architecture for Django frontend
  * @module main
+ *
+ * LOADING ORDER (IMPORTANT):
+ * 1. This file loads first (type="module", blocking)
+ * 2. It adds listener for 'alpine:init' event
+ * 3. Alpine CDN loads with defer
+ * 4. Alpine fires 'alpine:init', we register components
+ * 5. Alpine starts and scans DOM for x-data
  */
 
 import { initHTMX } from "./utils/htmx-config.js";
@@ -9,10 +16,6 @@ import { logger } from "./utils/logger.js";
 import { eventBus } from "./utils/event-bus.js";
 import { loginForm } from "./components/alpine-components.js";
 import { registerForm } from "./components/register-form.js";
-
-import { Alpine } from "../lib/alpine.esm.js";
-import htmx from "../lib/htmx.esm.js";
-window.htmx = htmx;
 
 /**
  * Application configuration
@@ -30,37 +33,70 @@ const config = {
 };
 
 /**
- * Initialize the application
- * @returns {Promise<void>}
+ * Register Alpine components - called during alpine:init
+ * This runs BEFORE Alpine scans the DOM
  */
-async function initApp() {
-  try {
-    logger.info("🚀 Initializing Django Modern Frontend Application");
-    // Initialize HTMX configuration
-    initHTMX();
+function setupAlpineComponents() {
+  // Get Alpine from window (injected by CDN)
+  const Alpine = window.Alpine;
 
-    // Set up global event listeners
-    setupGlobalListeners();
-
-    // Initialize Alpine.js stores (if needed)
-    setupAlpineStores();
-
-    // Register Alpine.js components
-    Alpine.data("onMountloginForm", loginForm);
-    Alpine.data("registerForm", registerForm);
-
-    logger.success("✅ Application initialized successfully");
-  } catch (error) {
-    logger.error("❌ Application initialization failed:", error);
+  if (!Alpine) {
+    logger.error("Alpine not found on window during alpine:init");
+    return;
   }
+
+  // Initialize stores first
+  Alpine.store("app", {
+    version: config.version,
+    notifications: [],
+
+    addNotification(message, type = "info") {
+      const id = Date.now();
+      this.notifications.push({ id, message, type });
+      setTimeout(() => {
+        this.removeNotification(id);
+      }, 5000);
+    },
+
+    removeNotification(id) {
+      this.notifications = this.notifications.filter((n) => n.id !== id);
+    },
+  });
+
+  Alpine.store("notification", {
+    notifications: [],
+
+    show(message, type = "info", duration = 5000) {
+      const id = Date.now() + Math.random();
+      this.notifications.push({ id, message, type });
+      logger.info(`Notification [${type}]:`, message);
+      if (duration > 0) {
+        setTimeout(() => this.hide(id), duration);
+      }
+      return id;
+    },
+
+    hide(id) {
+      this.notifications = this.notifications.filter((n) => n.id !== id);
+    },
+
+    clear() {
+      this.notifications = [];
+    },
+  });
+
+  // Register data components
+  Alpine.data("loginForm", loginForm);
+  Alpine.data("registerForm", registerForm);
+
+  logger.success("Alpine components and stores registered");
 }
 
 /**
  * Set up global event listeners
- * @returns {void}
  */
 function setupGlobalListeners() {
-  // Listen for HTMX events
+  // HTMX events
   document.body.addEventListener("htmx:afterSwap", (event) => {
     logger.debug("HTMX content swapped:", event.detail);
     eventBus.emit("content:updated", event.detail);
@@ -70,101 +106,29 @@ function setupGlobalListeners() {
     logger.error("HTMX request failed:", event.detail);
     eventBus.emit("request:error", event.detail);
   });
-
-  // Handle visibility change for performance optimization
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-      logger.debug("Page hidden - pausing non-critical tasks");
-    } else {
-      logger.debug("Page visible - resuming tasks");
-    }
-  });
 }
 
 /**
- * Set up Alpine.js global stores
- * @returns {void}
+ * Initialize application
  */
-function setupAlpineStores() {
-  Alpine.store("app", {
-    version: config.version,
-    notifications: [],
+(function init() {
+  logger.info("🚀 Initializing application...");
 
-    /**
-     * Add a notification
-     * @param {string} message - Notification message
-     * @param {string} type - Notification type (success, error, warning, info)
-     */
-    addNotification(message, type = "info") {
-      const id = Date.now();
-      this.notifications.push({ id, message, type });
+  // Init HTMX config
+  initHTMX();
 
-      // Auto-remove after 5 seconds
-      setTimeout(() => {
-        this.removeNotification(id);
-      }, 5000);
-    },
+  // Set up global listeners
+  setupGlobalListeners();
 
-    /**
-     * Remove a notification
-     * @param {number} id - Notification ID
-     */
-    removeNotification(id) {
-      this.notifications = this.notifications.filter((n) => n.id !== id);
-    },
+  // Register Alpine components BEFORE Alpine loads
+  // This listener will fire when Alpine CDN script executes
+  document.addEventListener("alpine:init", () => {
+    logger.info("alpine:init fired - registering components");
+    setupAlpineComponents();
   });
 
-  // Notification store - compatible with existing code
-  Alpine.store("notification", {
-    notifications: [],
+  logger.success("✅ Application initialized, waiting for Alpine...");
+})();
 
-    /**
-     * Show a notification
-     * @param {string} message - Notification message
-     * @param {string} type - Notification type (success, error, warning, info)
-     * @param {number} duration - Display duration in milliseconds (default: 5000)
-     */
-    show(message, type = "info", duration = 5000) {
-      const id = Date.now() + Math.random();
-      this.notifications.push({ id, message, type });
-
-      logger.info(`Notification [${type}]:`, message);
-
-      // Auto-remove after specified duration
-      if (duration > 0) {
-        setTimeout(() => {
-          this.hide(id);
-        }, duration);
-      }
-
-      return id;
-    },
-
-    /**
-     * Hide a notification
-     * @param {number} id - Notification ID
-     */
-    hide(id) {
-      this.notifications = this.notifications.filter((n) => n.id !== id);
-    },
-
-    /**
-     * Clear all notifications
-     */
-    clear() {
-      this.notifications = [];
-    },
-  });
-
-  logger.debug("Alpine.js stores initialized");
-}
-
-// Initialize when DOM is ready
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initApp);
-} else {
-  initApp();
-}
-
-// Export config for use in other modules
+// Export for other modules
 export { config };

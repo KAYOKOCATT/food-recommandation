@@ -1,13 +1,21 @@
 // global.d.ts
-import { Alpine } from 'alpinejs';
-import type htmx from 'htmx.org';  // 仅导入类型，不导入值
+import type { Alpine } from 'alpinejs';
+
+// 导出 htmx 的类型（如果需要其他地方使用）
+export type { 
+  HttpVerb, 
+  HtmxSwapStyle, 
+  HtmxRequestConfig, 
+  HtmxResponseInfo,
+  HtmxExtension 
+} from 'htmx.org';
 
 declare global {
   interface Window {
     Alpine: Alpine;
-    htmx: typeof import('htmx.org').default;  // 另一种获取 default export 类型的方式
   }
   
+  // 全局变量版本（如果直接用 htmx.xxx 而不写 window.）
   var Alpine: Alpine;
   var htmx: typeof import('htmx.org').default;
 }
