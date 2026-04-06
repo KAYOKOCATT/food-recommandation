@@ -102,84 +102,33 @@
               </div>
             </div>
             <div class="dropdown d-inline-block">
-              <button type="button"
-                      class="btn header-item waves-effect"
-                      id="page-header-flag-dropdown"
-                      data-toggle="dropdown"
-                      aria-haspopup="true"
-                      aria-expanded="false">
-                <img class=""
-                    src="static/picture/us.jpg"
-                    alt="Header Language"
-                    height="14">
+              <button type="button" class="btn header-item waves-effect" id="page-header-user-dropdown"
+                      data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      
+              {% if user_info and user_info.face %}
+              <img class="rounded-circle header-profile" src="{% static user_info.face %}"
+                          alt="Header Avatar" style="width: 36px; height: 36px; object-fit: cover;">
+              {% else %}
+              <img class="rounded-circle header-profile" src="{% static 'picture/avatar-1.jpg' %}"
+                          alt="Header Avatar" style="width: 36px; height: 36px; object-fit: cover;">
+              {% endif %}
+
+              <span class="d-none d-sm-inline-block ml-1">
+                {% if user_info %}
+                {{ user_info.username }}
+                {% else %}
+                Guest
+                {% endif %}
+              </span>
+              <i class="mdi mdi-menu-down d-none d-sm-inline-block"></i>
+
               </button>
+
               <div class="dropdown-menu dropdown-menu-right">
-                <!-- item-->
-                <a href="javascript:void(0);" class="dropdown-item notify-item">
-                  <img src="static/picture/spain.jpg"
-                      alt="user-image"
-                      class="mr-2"
-                      height="12">
-                  <span class="align-middle">Spanish</span>
-                </a>
-                <!-- item-->
-                <a href="javascript:void(0);" class="dropdown-item notify-item">
-                  <img src="static/picture/germany.jpg"
-                      alt="user-image"
-                      class="mr-2"
-                      height="12">
-                  <span class="align-middle">German</span>
-                </a>
-                <!-- item-->
-                <a href="javascript:void(0);" class="dropdown-item notify-item">
-                  <img src="static/picture/italy.jpg"
-                    alt="user-imag
-                    class="mr-2"
-                    height="12">
-                  <span class="align-middle">Italian</span>
-                </a>
-                <!-- item-->
-                <a href="javascript:void(0);" class="dropdown-item notify-item">
-                  <img src="static/picture/russia.jpg"
-                      alt="user-image"
-                      class="mr-2"
-                      height="12">
-                  <span class="align-middle">Russian</span>
-                </a>
-              </div>
+                <a class="dropdown-item" href="/api/v1/logout">
+                  <i class="mdi mdi-logout font-size-16 align-middle mr-1"></i> 
+                  Logout</a>
             </div>
-            <div class="dropdown d-inline-block">
-              <button type="button"
-                      class="btn header-item noti-icon right-bar-toggle waves-effect">
-                <i class="mdi mdi-tune"></i>
-              </button>
-            </div>
-            <div class="dropdown d-inline-block">
-              <button type="button"
-                      class="btn header-item waves-effect"
-                      id="page-header-user-dropdown"
-                      data-toggle="dropdown"
-                      aria-haspopup="true"
-                      aria-expanded="false">
-                <img class="rounded-circle header-profile-user"
-                    src="static/picture/avatar-1.jpg"
-                    alt="Header Avatar">
-                <span class="d-none d-sm-inline-block ml-1">Smith</span>
-                <i class="mdi mdi-chevron-down d-none d-sm-inline-block"></i>
-              </button>
-              <div class="dropdown-menu dropdown-menu-right">
-                <!-- item-->
-              <a class="dropdown-item" href="#"><i class="mdi mdi-face-profile font-size-16 align-middle mr-1"></i>
-            Profile</a>
-            <a class="dropdown-item" href="#"><i class="mdi mdi-credit-card-outline font-size-16 align-middle mr-1"></i> Billing</a>
-          <a class="dropdown-item" href="#"><i class="mdi mdi-account-settings font-size-16 align-middle mr-1"></i>
-        Settings</a>
-        <a class="dropdown-item" href="#"><i class="mdi mdi-lock font-size-16 align-middle mr-1"></i> Lock
-        screen</a>
-        <div class="dropdown-divider"></div>
-        <a class="dropdown-item" href="#"><i class="mdi mdi-logout font-size-16 align-middle mr-1"></i> Logout</a>
-      </div>
-    </div>
   </div>
 </div>
 </header>

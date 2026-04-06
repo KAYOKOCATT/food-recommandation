@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}
-  User Registration - Food Recommendation System
+  User Registration - 餐饮推荐系统
 {% endblock title %}
 {% block body_class %}
   bg-primary bg-pattern
@@ -18,7 +18,7 @@
       <div class="row">
         <div class="col-lg-12">
           <div class="text-center mb-5">
-            <h5 class="font-size-100 text-white mb-4">Food Recommendation System</h5>
+            <h5 class="font-size-100 text-white mb-4">餐饮推荐系统</h5>
           </div>
         </div>
       </div>
@@ -28,23 +28,23 @@
           <div class="card">
             <div class="card-body p-4">
               <div class="p-2">
-                <h5 class="mb-5 text-center">Create New Account</h5>
+                <h5 class="mb-5 text-center">创建新账户</h5>
                 {# Alpine.js Register Form Component #}
                 <div x-data="registerForm()">
                   <form @submit.prevent="handleSubmit">
                     {% csrf_token %}
                     {# Username Field - Using Reusable Component #}
-                    {% include "components/form-input.html" with field_name="username" field_type="text" field_placeholder="Username (3-20 characters)" required=True %}
+                    {% include "components/form-input.html" with field_name="username" field_type="text" field_placeholder="用户名 (3-20个字符)" required=True %}
                     {# Password Field - Using Reusable Component #}
-                    {% include "components/form-input.html" with field_name="password" field_type="password" field_placeholder="Password (at least 6 characters)" required=True %}
+                    {% include "components/form-input.html" with field_name="password" field_type="password" field_placeholder="密码 (至少6个字符)" required=True %}
                     {# Confirm Password Field - Using Reusable Component #}
-                    {% include "components/form-input.html" with field_name="confirmPassword" field_type="password" field_placeholder="Confirm Password" required=True %}
+                    {% include "components/form-input.html" with field_name="confirmPassword" field_type="password" field_placeholder="确认密码" required=True %}
                     {# Phone Number Field - Using Reusable Component #}
-                    {% include "components/form-input.html" with field_name="phone" field_type="tel" field_placeholder="Phone Number (11 digits)" required=True %}
+                    {% include "components/form-input.html" with field_name="phone" field_type="tel" field_placeholder="手机号码 (11位数字)" required=True %}
                     {# Email Field - Using Reusable Component #}
-                    {% include "components/form-input.html" with field_name="email" field_type="email" field_placeholder="Email Address" required=True %}
+                    {% include "components/form-input.html" with field_name="email" field_type="email" field_placeholder="电子邮箱" required=True %}
                     {# Terms of Service Agreement #}
-                    <div class="form-group form-group-custom mb-4">
+                    <div class="form-group form-group-custom mb-5">
                       <div class="custom-control custom-checkbox">
                         <input type="checkbox"
                                class="custom-control-input"
@@ -52,10 +52,10 @@
                                x-model="formData.agreeToTerms"
                                required>
                         <label class="custom-control-label" for="agreeToTerms">
-                          I agree to the
-                          <a href="#" class="text-primary">Terms of Service</a>
-                          and
-                          <a href="#" class="text-primary">Privacy Policy</a>
+                          我已阅读并同意
+                          <a href="#" class="text-primary">服务条款</a>
+                          和
+                          <a href="#" class="text-primary">隐私政策</a>
                         </label>
                       </div>
                     </div>
@@ -64,17 +64,17 @@
                       <button class="btn btn-success btn-block waves-effect waves-light"
                               type="submit"
                               :disabled="isSubmitDisabled">
-                        <span x-show="!isSubmitting">Register</span>
+                        <span x-show="!isSubmitting">注册</span>
                         <span x-show="isSubmitting">
-                          <i class="mdi mdi-loading mdi-spin"></i> Registering...
+                          <i class="mdi mdi-loading mdi-spin"></i> 注册中...
                         </span>
                       </button>
                     </div>
                     {# Login Link #}
                     <div class="mt-4 text-center">
                       <p class="mb-0">
-                        Already have an account?
-                        <a href="{% url 'login' %}" class="text-primary font-weight-medium">Login Now</a>
+                        已有账户？
+                        <a href="{% url 'login' %}" class="text-primary font-weight-medium">立即登录</a>
                       </p>
                     </div>
                   </form>

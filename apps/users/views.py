@@ -25,7 +25,7 @@
 import json
 import re
 from django import forms
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpRequest, JsonResponse, HttpResponse
 from django.contrib.auth.hashers import check_password
 from typing import Any, Union, Optional
@@ -109,7 +109,7 @@ def login(request: HttpRequest) -> Union[JsonResponse, HttpResponse]:
                 'data': {
                     'user_id': user.id,
                     'username': user.username,
-                    'redirect': 'D:\code\Food\templates\index.html'
+                    'redirect': 'auth/user_index.html'
                 },
                 'msg': '登录成功'
             }, status=200)
@@ -197,3 +197,7 @@ def register(request):
 def user_index(request):
     
     return render(request, 'auth/user_index.html')
+
+def logout(request):
+    request.session.flush()
+    return redirect('login')

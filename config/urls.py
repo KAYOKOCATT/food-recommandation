@@ -24,6 +24,8 @@ urlpatterns = [
     path('api/v1/foods/',include('apps.foods.urls')),
     
     path('api/v1/user_index/',views.user_index,name='user_index'),
+    path('api/v1/logout/',views.logout,name='logout'),
+    
     path('',views.login,name='login'),# 后期接登录要换
     
 ]

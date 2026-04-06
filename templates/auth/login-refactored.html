@@ -18,7 +18,7 @@
       <div class="row">
         <div class="col-lg-12">
           <div class="text-center mb-5">
-            <h5 class="font-size-100 text-white mb-4">Food Recommendation System</h5>
+            <h5 class="font-size-100 text-white mb-4">餐饮推荐系统</h5>
           </div>
         </div>
       </div>
@@ -28,36 +28,36 @@
           <div class="card">
             <div class="card-body p-4">
               <div class="p-2">
-                <h5 class="mb-5 text-center">Login</h5>
+                <h5 class="mb-5 text-center">登录</h5>
                 {# Alpine.js Form Component #}
                 <div x-data="loginForm()">
                   <form @submit.prevent="handleSubmit">
                     {% csrf_token %}
                     {# Username Field - Using Component #}
-                    {% include "components/form-input.html" with field_name="username" field_type="text" field_placeholder="Username" required="True" %}
+                    {% include "components/form-input.html" with field_name="username" field_type="text" field_placeholder="用户名" required="True" %}
                     {# Password Field - Using Component #}
-                    {% include "components/form-input.html" with field_name="password" field_type="password" field_placeholder="Password" required="True" %}
+                    {% include "components/form-input.html" with field_name="password" field_type="password" field_placeholder="密码" required="True" %}
                     {# Remember Me & Forgot Password #}
                     <div class="row">
                       <div class="col-md-6">
-                        {% include "components/form-checkbox.html" with field_name="remember" field_label="Remember me" field_id="customControlInline" %}
+                        {% include "components/form-checkbox.html" with field_name="remember" field_label="记住我" field_id="customControlInline" %}
                       </div>
                       <div class="col-md-6">
                         <div class="text-md-right mt-3 mt-md-0">
                           <a href="#" class="text-muted">
-                            <i class="mdi mdi-lock"></i> Forgot password?
+                            忘记密码？请联系管理员
                           </a>
                         </div>
                       </div>
                     </div>
                     {# Submit Button - Using Component #}
                     <div class="mt-4">
-                      {% include "components/submit-button.html" with button_text="Login" button_loading_text="Logging in..." button_class="btn-success" %}
+                      {% include "components/submit-button.html" with button_text="登录" button_loading_text="登录中..." button_class="btn-success" %}
                     </div>
                     {# Register Link #}
                     <div class="mt-4 text-center">
-                      <a href="{% url "register" %}" class="text-muted">
-                        <i class="mdi mdi-account-circle mr-1"></i>Create a new account
+                      <a href="{% url 'register' %}" class="text-muted">
+                        <i class="mdi mdi-account-circle mr-1"></i>创建新账户
                       </a>
                     </div>
                   </form>
