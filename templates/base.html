@@ -23,16 +23,16 @@
     <link href="{% static 'css/app.min.css' %}"
           rel="stylesheet"
           type="text/css">
-    {# HTMX CDN - Load first (no defer, blocking is OK for small script) #}
+    {# HTMX 库 - 优先加载（小脚本可以阻塞加载）#}
     <script defer src="{% static '/src/lib/htmx.js' %}"></script>
     {% comment %}
-      ALPINE.JS LOADING STRATEGY:
-      1. Load main.js as module first - it listens for 'alpine:init' and registers components
-      2. Then load Alpine with defer - it fires 'alpine:init' when ready
-      3. Alpine scans DOM and finds registered components
+      ALPINE.JS 加载策略：
+      1. 首先加载 main.js 作为模块 - 它监听 'alpine:init' 并注册组件
+      2. 然后用 defer 加载 Alpine - 当就绪时触发 'alpine:init'
+      3. Alpine 扫描 DOM 并找到已注册的组件
     {% endcomment %}
     <script type="module" src="{% static 'src/js/main.js' %}"></script>
-    {# DEBUG: Uncomment to verify Alpine loading order #}
+    {# DEBUG: 取消注释以验证 Alpine 加载顺序 #}
     <script>
       document.addEventListener('alpine:init', () => {
         console.log('[Alpine] alpine:init fired');
@@ -41,7 +41,7 @@
         console.log('[Alpine] fully initialized');
       });
     </script>
-    {# Alpine.js CDN - Must load AFTER main.js (which listens for alpine:init) #}
+    {# Alpine.js CDN - 必须在 main.js 之后加载（因为 main.js 监听 alpine:init）#}
     <script defer src="{% static '/src/lib/alpine.js' %}"></script>
     {% load compress %}
     {# SCSS Compilation via django-compressor #}
@@ -68,7 +68,7 @@
       <nav class="navbar">
         <div class="container">
           <div class="navbar__content">
-            <a href="/" class="navbar__brand">
+            <a href="" class="navbar__brand">
               <span class="navbar__logo">📊</span>
               <span class="navbar__title">餐饮推荐</span>
             </a>

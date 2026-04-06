@@ -21,5 +21,9 @@ from apps.users import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/v1/users/",include('apps.users.urls')),
-    path('',views.login,name='login'),  # 后期接登录要换
+    path('api/v1/foods/',include('apps.foods.urls')),
+    
+    path('api/v1/user_index/',views.user_index,name='user_index'),
+    path('',views.login,name='login'),# 后期接登录要换
+    
 ]

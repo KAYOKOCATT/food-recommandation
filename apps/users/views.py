@@ -108,7 +108,8 @@ def login(request: HttpRequest) -> Union[JsonResponse, HttpResponse]:
                 'code': 200,
                 'data': {
                     'user_id': user.id,
-                    'username': user.username
+                    'username': user.username,
+                    'redirect': 'D:\code\Food\templates\index.html'
                 },
                 'msg': '登录成功'
             }, status=200)
@@ -118,7 +119,6 @@ def login(request: HttpRequest) -> Union[JsonResponse, HttpResponse]:
                 'data': {},
                 'msg': '用户名或密码错误'
             }, status=200)
-
     return render(request, 'auth/login-refactored.html')
 
 
@@ -193,3 +193,7 @@ def register(request):
 
     # GET 请求返回注册页面（保持原有逻辑）
     return render(request, 'auth/register-refactored.html')
+
+def user_index(request):
+    
+    return render(request, 'auth/user_index.html')

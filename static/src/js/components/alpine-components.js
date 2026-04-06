@@ -206,7 +206,7 @@ export function loginForm() {
 
       // Redirect after delay
       setTimeout(() => {
-        window.location.href = "/myapp/index/";
+        window.location.href = "/api/v1/user_index/";
       }, 1500);
     }
   });
@@ -235,7 +235,7 @@ export function registerFormBasic() {
       confirmPassword: ["required"],
     },
 
-    submitUrl: "/myapp/register/",
+    submitUrl: config.apiBaseUrl + "/users/register/",
 
     // Override validateForm to add password confirmation check
     validateForm() {

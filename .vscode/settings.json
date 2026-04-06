@@ -5,6 +5,7 @@
     "--load-plugins",
     "pylint_django.checkers.migrations",
     "--django-settings-module=Food.settings",
+    "--django-settings-module=config.settings",
     "--disable=C0115,C0116,E1136,E0307"
   ]
 }

@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'apps.users',  # 用户模块
+    'apps.users',# 用户模块
+    'apps.foods',# 食物模块
     'django_htmx',  # 第三方-HTMX增强
     'compressor',  # 第三方-SCSS/JS压缩
 
@@ -84,7 +85,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'food_recommend',
         'USER': 'root',
-        'PASSWORD': '5247',
+        'PASSWORD': '123456',
         'HOST': 'localhost',
         'PORT': '3306',
     }

@@ -11,9 +11,10 @@ def main():
         from django.core.management import execute_from_command_line
     except ImportError as exc:
         raise ImportError(
-            "Couldn't import Django. Are you sure it's installed and "
-            "available on your PYTHONPATH environment variable? Did you "
-            "forget to activate a virtual environment?"
+            "无法导入 Django。请确认以下事项：\n"
+            "1. Django 已安装（运行：pip install django）\n"
+            "2. 虚拟环境已激活（运行：.venv\\Scripts\\activate）\n"
+            "3. 所有依赖已安装（运行：pip install -r requirements.txt）"
         ) from exc
     execute_from_command_line(sys.argv)
 
