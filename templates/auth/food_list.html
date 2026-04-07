@@ -42,36 +42,76 @@
                   </ul>
                 </div>
                 <!-- Gallary -->
-                <div class="row container-grid projects-wrapper g-3">
+                <div class="row container-grid projects-wrapper ">
                   {% for item in page_obj %}
-                    <div class="col-xl-2 branding designing development">
-                      <div class="gallery-box mt-4"
-                         style="position: relative;
-                                width: 200px;
-                                border-radius: 8px;
-                                padding-bottom: 100%;
-                                overflow: hidden">
-                        <a class="gallery-popup"
-                           href=""
-                           onclick="window.location.href = this.href;return false;"></a>
-                        <img class="gallery-demo-img img-fluid mx-auto object-cover-cover object-position-center"
-                             src="{{ item.imgurl }}"
-                             style="position: absolute;
-                                    top: 0;
-                                    left: 0;
-                                    object-position: center;
-                                    aspect-ratio: 1 / 1;
-                                    object-fit: cover">
-                        <div class="gallery-overlay">
-                          <div class="overlay-content">
-                            <h5 class="overlay-title">{{ item.foodname }}</h5>
-                            <p class="text-uppercase mb-0">{{ item.foodtype }}</p>
-                          </div>
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                        <div class="gallery-box mt-4"
+                           style="position: relative;width: 100%;aspect-ratio: 1 / 1;border-radius: 8px;overflow: hidden;">
+                            <a class="gallery-popup" href="" ; title="">
+                                <img class="gallery-demo-img img-fluid mx-auto" 
+                                     onclick="window.location.href = this.href;return false;" src="{{ item.imgurl }}" alt="1"
+                                     style="position: absolute;top: 0;left: 0;object-fit: cover;">
+                                <div class="gallery-overlay">
+                                    <div class="overlay-content">
+                                        <h5 class="overlay-title">{{ item.foodname }}</h5>
+                                        <p class="text-uppercase mb-0">{{ item.foodtype }}</p>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
-                      </div>
                     </div>
-                {% endfor %}
-              </div>
+                  {% endfor %}
+                </div>
+
+                <div class="col-6" style="margin-top: 20px;">
+                    <div class="pagination pagination-rounded mb-0">
+                        <ul class="pagination pagination-rounded mb-0">
+                            <!--前一页按钮 -->
+                            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                                <a href="?category={{ selected_category }}&page=1" aria-label="First"
+                                   class="page-link">First</a>
+                            </li>
+
+                            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                                {% if page_obj.has_previous %}
+                                    <a href="?category={{ selected_category }}&page={{ page_obj.previous_page_number }}"
+                                       aria-label="Previous" class="page-link">
+                                       <i class="mdi mdi-chevron-left"></i>
+                                    </a>
+                                {% endif %}
+                            </li>
+
+                            <!--页码循环 -->
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if num == page_obj.number %}
+                                    <li class="page-item active">
+                                        <href="#" class="page-link">{{ num }}</href>
+                                    </li>
+                                {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                                    <li class="page-item">
+                                        <a href="?category={{ selected_category }}&page={{ num }}"
+                                           class="page-link">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            <!--后一页按钮 -->
+                            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                                {% if page_obj.has_next %}
+                                    <a href="?category={{ selected_category }}&page={{ page_obj.next_page_number }}"
+                                       aria-label="Next" class="page-link">
+                                       <i class="mdi mdi-chevron-right"></i>
+                                    </a>
+                                {% endif %}
+                            </li>
+                            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                                <a href="?category={{ selected_category }}&page={{ page_obj.paginator.num_pages }}"
+                                   aria-label="Last" class="page-link">Last</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
               </div>
             </div>
           </div>
