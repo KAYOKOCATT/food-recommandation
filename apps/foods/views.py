@@ -12,58 +12,36 @@
         path('list/', food_list, name='food_list'),
     ]
 """
-
-from django.shortcuts import render
-from django.http import HttpRequest, JsonResponse
 from typing import Any
+from django.shortcuts import render
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Foods
 
 
-def food_list(request: HttpRequest) -> Any:
-    """
-    菜品列表视图 - 查询 myapp_foods 表
+def food_list(request) -> Any:
+    foodlist = Foods.objects.all()
 
-    返回：
-        渲染的 HTML 页面，包含所有菜品数据
-    """
-    # 查询所有菜品
-    foods = Foods.objects.all().order_by('-id')
+    foodtypes = Foods.objects.values("foodtype").distinct()
+    # 分类筛选
+    selected_category = request.GET.get("category", 'all')
 
-    # 统计信息
-    total_count = foods.count()
+    if selected_category != 'all':
+        foodlist = foodlist.filter(foodtype=selected_category)
 
-    return render(request, 'foods/list.html', {
-        'foods': foods,
-        'total_count': total_count,
-    })
+    items_per_page = 18
+    paginator = Paginator(foodlist, items_per_page)
 
+    page_number = request.GET.get('page', 1)
+    #异常处理
+    try:
+        page_number = int(page_number)
+        if page_number < 1:
+            page_number = 1
+    except ValueError:
+        page_number = 1
 
-def food_list_api(request: HttpRequest) -> JsonResponse:
-    """
-    菜品列表 API - 返回 JSON 数据
-
-    用于前端 AJAX 请求获取菜品列表
-    """
-    # 查询所有菜品
-    foods = Foods.objects.all().order_by('-id')
-
-    # 转换为字典列表
-    food_list = []
-    for food in foods:
-        food_list.append({
-            'id': food.id,
-            'foodname': food.foodname,
-            'foodtype': food.foodtype,
-            'recommand': food.recommand,
-            'imgurl': food.imgurl,
-            'price': str(food.price),  # Decimal 需要转字符串
-        })
-
-    return JsonResponse({
-        'code': 200,
-        'msg': '查询成功',
-        'data': {
-            'foods': food_list,
-            'total': len(food_list),
-        }
-    })
+    try:
+        page_obj = paginator.get_page(page_number)
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.page(paginator.num_pages)
+    return render(request, "auth/food_list.html", {"page_obj": page_obj, "foodtypes": foodtypes, "selected_category": selected_category})

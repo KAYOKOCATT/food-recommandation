@@ -16,16 +16,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
-from apps.users import views
+from apps.users import views as user_views
+from apps.foods import views as food_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/v1/users/",include('apps.users.urls')),
     path('api/v1/foods/',include('apps.foods.urls')),
     
-    path('api/v1/user_index/',views.user_index,name='user_index'),
-    path('api/v1/logout/',views.logout,name='logout'),
+    path('api/v1/user_index/',user_views.user_index,name='user_index'),
+    path('api/v1/food_list/',food_views.food_list,name='food_list'),
+    path('api/v1/logout/',user_views.logout,name='logout'),
     
-    path('',views.login,name='login'),# 后期接登录要换
+    path('',user_views.login,name='login'),# 后期接登录要换
     
 ]

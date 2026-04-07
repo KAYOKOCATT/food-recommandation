@@ -1,0 +1,86 @@
+{% extends 'layout.html' %}
+{% block content %}
+  <div class="page-content">
+    <!-- Page-Title -->
+    <div class="page-title-box">
+      <div class="container-fluid">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h4 class="page-title mb-1">美食列表</h4>
+            <ol class="breadcrumb m-0">
+              <li class="breadcrumb-item">
+                <a href="/api/v1/user_index">主页</a>
+              </li>
+              <li class="breadcrumb-item active">美食列表</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- end page title end breadcrumb -->
+    <div class="page-content-wrapper">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-xl-12">
+            <div class="card">
+              <div class="card-body">
+                <div class="row">
+                  <ul class="col list-inline gallery-categories-filter text-center"
+                      id="filter">
+                    <li class="list-inline-item">
+                      <a class="categories {% if selected == 'all' %}active{% endif %}"
+                         href="?category=all"
+                         onclick="window.location.href = this.href;return false;">All</a>
+                    </li>
+                    {% for foodtype in foodtypes %}
+                      <li class="list-inline-item">
+                        <a class="categories {% if selected_category == foodtype.foodtype %}active{% endif %}"
+                           href="?category={{ foodtype.foodtype }}"
+                           onclick="window.location.href = this.href;return false;">{{ foodtype.foodtype }}</a>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                <!-- Gallary -->
+                <div class="row container-grid projects-wrapper g-3">
+                  {% for item in page_obj %}
+                    <div class="col-xl-2 branding designing development">
+                      <div class="gallery-box mt-4"
+                         style="position: relative;
+                                width: 200px;
+                                border-radius: 8px;
+                                padding-bottom: 100%;
+                                overflow: hidden">
+                        <a class="gallery-popup"
+                           href=""
+                           onclick="window.location.href = this.href;return false;"></a>
+                        <img class="gallery-demo-img img-fluid mx-auto object-cover-cover object-position-center"
+                             src="{{ item.imgurl }}"
+                             style="position: absolute;
+                                    top: 0;
+                                    left: 0;
+                                    object-position: center;
+                                    aspect-ratio: 1 / 1;
+                                    object-fit: cover">
+                        <div class="gallery-overlay">
+                          <div class="overlay-content">
+                            <h5 class="overlay-title">{{ item.foodname }}</h5>
+                            <p class="text-uppercase mb-0">{{ item.foodtype }}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                {% endfor %}
+              </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- end row -->
+    </div>
+    <!-- end container-fluid -->
+  </div>
+  <!-- end page-content-wrapper -->
+</div>
+{% endblock %}

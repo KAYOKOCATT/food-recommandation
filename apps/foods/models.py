@@ -12,7 +12,7 @@ class Foods(models.Model):
         id (AutoField): 菜品唯一标识（自动创建）
         foodname (CharField): 菜品名称，最大长度70
         foodtype (CharField): 菜品类型，最大长度20（如：川菜、粤菜、甜品等）
-        recommand (CharField): 推荐语，最大长度255，可为空
+        recommend (CharField): 推荐语，最大长度255，可为空
         imgurl (CharField): 菜品图片URL，最大长度255
         price (DecimalField): 菜品价格，5位数字，2位小数
     
@@ -42,7 +42,7 @@ class Foods(models.Model):
 
     foodname = models.CharField(max_length=70)
     foodtype = models.CharField(max_length=20)
-    recommand = models.CharField(max_length=255, null=True, blank=True)
+    recommend = models.CharField(max_length=255, null=True, blank=True)
     imgurl = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=5, decimal_places=2)
 
