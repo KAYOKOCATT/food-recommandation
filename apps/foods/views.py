@@ -15,7 +15,7 @@
 from typing import Any
 from django.shortcuts import render
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .models import Foods
+from .models import Foods, Comment, Collect
 
 
 def food_list(request) -> Any:
@@ -45,3 +45,21 @@ def food_list(request) -> Any:
     except (PageNotAnInteger, EmptyPage):
         page_obj = paginator.page(paginator.num_pages)
     return render(request, "auth/food_list.html", {"page_obj": page_obj, "foodtypes": foodtypes, "selected_category": selected_category})
+
+def detail(request, foodid: int = None):
+    foodobj = Foods.objects.get(id=foodid)
+    
+    commentlist = Comment.objects.filter(fid=foodid)
+    
+    is_collect = False
+    user_id = request.session.get("user_id")
+    if user_id:
+        is_collect = Collect.objects.filter(user_id=user_id, food=foodobj).exists()
+        
+    context = {
+        "foodinfo": foodobj,
+        "foodlist":food_list,
+        "commentlist":commentlist,
+        "is_collect":is_collect,#是否收藏
+    }
+    return render(request, "auth/food_detail.html", context)

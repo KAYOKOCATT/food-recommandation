@@ -1,3 +1,5 @@
+from enum import auto
+from time import ctime
 from typing import TYPE_CHECKING
 from django.db import models
 from django.db.models import Manager
@@ -51,3 +53,23 @@ class Foods(models.Model):
 
     class Meta:
         db_table = "myapp_foods"
+
+# 评论模型类
+class Comment(models.Model):
+    uid = models.IntegerField()
+    fid = models.IntegerField()
+    realname = models.CharField(max_length=11)
+    content = models.TextField()
+    ctime = models.DateTimeField(null=True)
+    
+# 收藏模型类
+class Collect(models.Model):
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE) #用户外键
+    food = models.ForeignKey("foods.Foods", on_delete=models.CASCADE) #菜品外键
+    added_time = models.DateTimeField(auto_now_add=True) #收藏时间
+    
+    class Meta:
+        unique_together = ("user", "food")
+        
+    def __str__(self):
+        return f"{self.user.username} 收藏了 {self.food.foodname}"

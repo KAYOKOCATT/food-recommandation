@@ -1,0 +1,83 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <div class="page-content">
+        <!-- ===== 页面标题区域 ===== -->
+        <div class="page-title-box">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="page-title mb-1">美食详情</h4>
+                        <!-- 导航 -->
+                        <ol class="breadcrumb m-0">
+                            <li class="breadcrumb-item">
+                                <a href="/api/v1/user_index">主页</a>
+                            </li>
+                            <li class="breadcrumb-item active">美食详情</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 页面标题区域结束 -->
+        <div class="page-content-wrapper">
+            <!-- ===== 页面内容区域 ===== -->
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-xl-10 mx-auto">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-lg-6 col-md-5 col-sm-6 col-xs-12">
+                                        <div class="flexslider">
+                                            <ul class="gallery-overlay">
+                                                <img src="{{ foodinfo.imgurl }}"
+                                                     alt="food"
+                                                     class="gallery-demo-img img-fluid mx-auto" />
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6 col-md-7 col-sm-6 col-xs-12">
+                                        <div class="product-info-main">
+                                            <div class="page-title-3">
+                                                <h1>{{ foodinfo.foodname }}</h1>
+                                            </div>
+                                            <div class="product-reviews-summary mb-3">
+                                                <div class="rating-summary d-flex">
+                                                    <a href="#" class="mr-1">
+                                                        <i class="da da-star"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="product-social-links mb-3">
+                                                <div class="product-addto-links-text d-flex align-items-center">
+                                                    <span class="font-weight-bold text-dark">菜系</span>
+                                                    <span class="ml-2 text-secondary">{{ foodinfo.type }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="product-info-price mb-3">
+                                                <div class="price-final">
+                                                    <span style="...">￥{{ foodinfo.price|floatformat:2 }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="product-add-form mb-3">
+                                                <form action="" class="d-flex align-items-center justify-content-start">
+                                                    <a id="addcollect"
+                                                       href="javascript:void(0);"
+                                                       class="btn {% if is_collect %}btn-danger{% else %}btn-secondary{% endif %}"
+                                                       data-is-collect="{% if is_collect %}true{% else %}false{% endif %}">
+                                                        <i class="fas fa-heart"></i>
+                                                    </a>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

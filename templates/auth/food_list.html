@@ -1,12 +1,14 @@
 {% extends 'layout.html' %}
 {% block content %}
+  <!-- 页面内容区域 -->
   <div class="page-content">
-    <!-- Page-Title -->
+    <!-- ===== 页面标题区域 ===== -->
     <div class="page-title-box">
       <div class="container-fluid">
         <div class="row align-items-center">
           <div class="col-md-8">
             <h4 class="page-title mb-1">美食列表</h4>
+            <!-- 导航 -->
             <ol class="breadcrumb m-0">
               <li class="breadcrumb-item">
                 <a href="/api/v1/user_index">主页</a>
@@ -17,21 +19,25 @@
         </div>
       </div>
     </div>
-    <!-- end page title end breadcrumb -->
+    <!-- 页面标题区域结束 -->
+
+    <!-- ===== 页面主要内容区域 ===== -->
     <div class="page-content-wrapper">
       <div class="container-fluid">
         <div class="row">
           <div class="col-xl-12">
             <div class="card">
               <div class="card-body">
+                <!-- ===== 分类筛选器 ===== -->
                 <div class="row">
-                  <ul class="col list-inline gallery-categories-filter text-center"
-                      id="filter">
+                  <ul class="col list-inline gallery-categories-filter text-center" id="filter">
+                    <!-- 全部分类按钮 -->
                     <li class="list-inline-item">
                       <a class="categories {% if selected == 'all' %}active{% endif %}"
                          href="?category=all"
                          onclick="window.location.href = this.href;return false;">All</a>
                     </li>
+                    <!-- 循环渲染各个分类按钮 -->
                     {% for foodtype in foodtypes %}
                       <li class="list-inline-item">
                         <a class="categories {% if selected_category == foodtype.foodtype %}active{% endif %}"
@@ -41,16 +47,24 @@
                     {% endfor %}
                   </ul>
                 </div>
-                <!-- Gallary -->
+                <!-- 分类筛选器结束 -->
+
+                <!-- ===== 美食画廊区域 ===== -->
                 <div class="row container-grid projects-wrapper ">
+                  <!-- 循环渲染美食卡片 -->
                   {% for item in page_obj %}
                     <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                        <!-- 单个美食卡片 -->
                         <div class="gallery-box mt-4"
                            style="position: relative;width: 100%;aspect-ratio: 1 / 1;border-radius: 8px;overflow: hidden;">
-                            <a class="gallery-popup" href="" ; title="">
+                            <!-- 点击链接 -->
+                            <a class="gallery-popup" href="{% url 'food_detail' item.id %}"
+                               onclick="window.location.href = this.href;return false;" title="">
+                                <!-- 美食图片 -->
                                 <img class="gallery-demo-img img-fluid mx-auto" 
-                                     onclick="window.location.href = this.href;return false;" src="{{ item.imgurl }}" alt="1"
+                                     " src="{{ item.imgurl }}" alt="1"
                                      style="position: absolute;top: 0;left: 0;object-fit: cover;">
+                                <!-- 悬停时显示的遮罩层 -->
                                 <div class="gallery-overlay">
                                     <div class="overlay-content">
                                         <h5 class="overlay-title">{{ item.foodname }}</h5>
@@ -62,16 +76,19 @@
                     </div>
                   {% endfor %}
                 </div>
+                <!-- 美食画廊区域结束 -->
 
+                <!-- ===== 分页导航 ===== -->
                 <div class="col-6" style="margin-top: 20px;">
                     <div class="pagination pagination-rounded mb-0">
                         <ul class="pagination pagination-rounded mb-0">
-                            <!--前一页按钮 -->
+                            <!-- 跳转到第一页按钮 -->
                             <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
                                 <a href="?category={{ selected_category }}&page=1" aria-label="First"
                                    class="page-link">First</a>
                             </li>
 
+                            <!-- 上一页按钮 -->
                             <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
                                 {% if page_obj.has_previous %}
                                     <a href="?category={{ selected_category }}&page={{ page_obj.previous_page_number }}"
@@ -81,12 +98,14 @@
                                 {% endif %}
                             </li>
 
-                            <!--页码循环 -->
+                            <!-- 页码循环 -->
                             {% for num in page_obj.paginator.page_range %}
+                                <!-- 当前页高亮显示 -->
                                 {% if num == page_obj.number %}
                                     <li class="page-item active">
                                         <href="#" class="page-link">{{ num }}</href>
                                     </li>
+                                <!-- 显示当前页前后2页 -->
                                 {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
                                     <li class="page-item">
                                         <a href="?category={{ selected_category }}&page={{ num }}"
@@ -95,7 +114,7 @@
                                 {% endif %}
                             {% endfor %}
 
-                            <!--后一页按钮 -->
+                            <!-- 下一页按钮 -->
                             <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
                                 {% if page_obj.has_next %}
                                     <a href="?category={{ selected_category }}&page={{ page_obj.next_page_number }}"
@@ -104,6 +123,7 @@
                                     </a>
                                 {% endif %}
                             </li>
+                            <!-- 跳转到最后一页按钮 -->
                             <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
                                 <a href="?category={{ selected_category }}&page={{ page_obj.paginator.num_pages }}"
                                    aria-label="Last" class="page-link">Last</a>
@@ -111,6 +131,7 @@
                         </ul>
                     </div>
                 </div>
+                <!-- 分页导航结束 -->
 
               </div>
             </div>
