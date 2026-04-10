@@ -65,6 +65,24 @@ python manage.py build_food_collect_cf --algorithm both --top-k 20
 - `data/recommendations/food_itemcf.json`：菜品到相似菜品。
 - `data/recommendations/food_usercf.json`：用户到候选菜品。
 
+Yelp 餐厅内容推荐命令：
+
+```bash
+# 开发验证：限制商家和 review 扫描量，先确认产物结构
+python manage.py build_yelp_content_recs --business-limit 1000 --review-line-limit 50000 --top-k 10
+
+# 完整离线构建：默认扫描完整 business/review 文件，每家餐厅最多聚合 50 条 review
+python manage.py build_yelp_content_recs --top-k 20
+
+# 如需不限制每家餐厅聚合 review 数量，传 0；运行会更慢且更吃内存
+python manage.py build_yelp_content_recs --max-reviews-per-business 0
+```
+
+默认输出：
+
+- `data/recommendations/yelp_content_itemcf.json`：Yelp 餐厅到相似餐厅的 TF-IDF 内容相似度。
+- `data/recommendations/yelp_business_profiles.json`：参与构建的 Yelp 餐厅元数据和聚合 review 数。
+
 `Foods.collect_count` 和 `Foods.comment_count` 是展示/排序用统计字段。初始值来自
 `food.csv` 的 `收藏数量`、`评论数量`，后续由本系统收藏、取消收藏、发表评论增量维护。
 `generate_demo_collects` 生成演示收藏时也会同步增加 `collect_count`，但这些数据仍然属于

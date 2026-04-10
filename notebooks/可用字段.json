@@ -1,0 +1,66 @@
+{
+  "yelp_academic_dataset_business(15W rows)": {
+    "business_id": "Pns2l4eNsfO8kk83dixA6A",
+    "name": "Abby Rappoport, LAC, CMQ",
+    "address": "1616 Chapala St, Ste 2",
+    "city": "Santa Barbara",
+    "state": "CA",
+    "postal_code": "93101",
+    "latitude": 34.4266787,
+    "longitude": -119.7111968,
+    "stars": 5.0,
+    "review_count": 7,
+    "is_open": 0,
+    "attributes": {
+      "ByAppointmentOnly": "True"
+    },
+    "categories": "Doctors, Traditional Chinese Medicine, Naturopathic\/Holistic, Acupuncture, Health & Medical, Nutritionists",
+    "hours": null
+  },
+  "yelp_academic_dataset_checkin(13W rows)": {
+    "business_id": "---kPU91CF4Lq2-WlRu9Lw",
+    "date": "2020-03-13 21:10:56, 2020-06-02 22:18:06, 2020-07-24 22:42:27, 2020-10-24 21:36:13, 2020-12-09 21:23:33, 2021-01-20 17:34:57, 2021-04-30 21:02:03, 2021-05-25 21:16:54, 2021-08-06 21:08:08, 2021-10-02 15:15:42, 2021-11-11 16:23:50"
+  },
+  "yelp_academic_dataset_review(700W rows)": {
+    "review_id": "KU_O5udG6zpxOg-VcAEodg",
+    "user_id": "mh_-eMZ6K5RLWhZyISBhwA",
+    "business_id": "XQfwVwDr-v0ZS3_CbbE5Xw",
+    "stars": 3.0,
+    "useful": 0,
+    "funny": 0,
+    "cool": 0,
+    "text": "If you decide to eat here, just be aware it is going to take about 2 hours from beginning to end. We have tried it multiple times, because I want to like it! I have been to it's other locations in NJ and never had a bad experience. \n\nThe food is good, but it takes a very long time to come out. The waitstaff is very young, but usually pleasant. We have just had too many experiences where we spent way too long waiting. We usually opt for another diner or restaurant on the weekends, in order to be done quicker.",
+    "date": "2018-07-07 22:09:11"
+  },
+  "yelp_academic_dataset_tip(90W rows)": {
+    "user_id": "AGNUgVwnZUey3gcPCJ76iw",
+    "business_id": "3uLgwr0qeCNMjKenHJwPGQ",
+    "text": "Avengers time with the ladies.",
+    "date": "2012-05-18 02:17:21",
+    "compliment_count": 0
+  },
+  "yelp_academic_dataset_user(200W rows)": {
+    "user_id": "qVc8ODYU5SZjKXVBgXdI7w",
+    "name": "Walker",
+    "review_count": 585,
+    "yelping_since": "2007-01-25 16:47:26",
+    "useful": 7217,
+    "funny": 1259,
+    "cool": 5994,
+    "elite": "2007",
+    "friends(maybe very large)": "NSCy54eWehBJyZdG2iE84w, pe42u7DcCH2QmI81NX-8qA",
+    "fans": 267,
+    "average_stars": 3.91,
+    "compliment_hot": 250,
+    "compliment_more": 65,
+    "compliment_profile": 55,
+    "compliment_cute": 56,
+    "compliment_list": 18,
+    "compliment_note": 232,
+    "compliment_plain": 844,
+    "compliment_cool": 467,
+    "compliment_funny": 467,
+    "compliment_writer": 239,
+    "compliment_photos": 180
+  }
+}

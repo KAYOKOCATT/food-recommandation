@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'apps.users.apps.UserAppConfig',  # 用户模块
     'apps.foods',  # 食物模块
+    'apps.recommendations.apps.RecommendationsConfig',
     'django_htmx',  # 第三方-HTMX增强
     'compressor',  # 第三方-SCSS/JS压缩
 

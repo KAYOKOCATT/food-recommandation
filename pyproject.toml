@@ -33,8 +33,7 @@ disable = [
     "mixed-line-endings",
     "trailing-whitespace",
     "missing-final-newline",
-    "too-few-public-methods",
-    "new-db-field-with-default"
+    "too-few-public-methods"
 ]
 
 [tool.pylint.format]

@@ -12,6 +12,7 @@
 - 中文菜品收藏 0/1 矩阵的 ItemCF/UserCF 算法模块。
 - 演示收藏数据生成命令和中文菜品协同过滤离线 JSON 生成命令。
 - 菜品表统计字段：`collect_count`、`comment_count`，用于热门排序和展示。
+- Yelp TF-IDF 内容推荐离线脚本，输出相似餐厅 JSON 和餐厅元数据 JSON。
 
 ### 当前约束
 
@@ -23,8 +24,7 @@
 
 ### 下一步
 
-1. 把已完成的 Yelp TF-IDF notebook 逻辑沉淀为可重复运行的离线脚本，输出餐厅相似度 JSON。
-2. 基于 Yelp review 评分构造 user-business 矩阵，实现 ItemCF 和 UserCF 的 Top-K 召回。
-3. 在 Django 页面中增加中文菜品推荐展示入口，接入 `food_itemcf.json` 或 `food_usercf.json`。
-4. 在列表页/详情页展示 `collect_count/comment_count`，让热门排序依据可见。
-5. 补登录、注册、收藏、评论、ItemCF/UserCF 和推荐重排的自动化测试。
+1. 基于 Yelp review 评分构造 user-business 矩阵，实现 ItemCF 和 UserCF 的 Top-K 召回。
+2. 在 Django 页面中增加中文菜品推荐展示入口，接入 `food_itemcf.json` 或 `food_usercf.json`。
+3. 在列表页/详情页展示 `collect_count/comment_count`，让热门排序依据可见。
+4. 补登录、注册、收藏、评论、ItemCF/UserCF 和推荐重排的自动化测试。
