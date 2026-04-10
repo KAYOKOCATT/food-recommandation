@@ -17,3 +17,26 @@ django-libsass==0.9
 django-compressor==4.6.0
 requests==2.33.1
 whitenoise==6.12.0
+
+pandas       
+numpy
+scikit-learn
+scikit-surprise
+pyyaml
+tqdm
+loguru
+pyarrow
+wordcloud
+
+# geopy
+# redis
+# ijson
+# h5py
+# joblib
+
+jupyter
+matplotlib
+seaborn
+ipywidgets
+
+lxml

@@ -20,6 +20,13 @@
 
 ## 系统架构
 
+1. Python Django 实现后台业务逻辑 + 前端界面的模板渲染
+2. 数据加载：需要把训练数据的 csv 加载到业务数据库（MYSQL）作为初始数据（冷启动解决）
+3. 统计服务：指标有：平均评分、评分/评论数（热门程度）、TOP类别、最近的热门……**统计完毕后写会业务数据库**
+4. 离线推荐服务：得到用户的推荐列表（UserCF or LSM）+ 菜品/餐厅相似度预计算（副产物,ItemCF）
+5. 可选的 Redis 缓存
+6. 实时推荐服务：方案一->用户点击了喜欢/收藏/评分，触发业务记录，送到实施推荐算法；方案二->用户最近的浏览记录，触发ItemCF
+
 ## 核心功能
 
 ### 1. 用户画像构建
@@ -40,16 +47,67 @@
 
 - **基于用户的协同过滤** (User-Based CF)：找到相似用户群体，推荐他们喜欢的餐厅
 - **基于物品的协同过滤** (Item-Based CF)：根据用户历史偏好，推荐相似餐厅/菜品
-- **混合推荐策略**：结合多种算法结果，提升推荐多样性
+- **基于内容的推荐** 不依赖大量用户行为数据，通过商家数据包含的 UGC（用户生成内容），构建特征进行推荐
+- **隐语义模型协同过滤（选做）**
 
-### 4. 推荐服务
+### 4. 推荐服务设计
 
-- 个性化首页推荐
-- "猜你喜欢" 智能推荐
-- 相似餐厅推荐
-- 热门趋势推荐
+#### 4.1 目标
+
+- **首页信息流**：首先是统计推荐，最简单且对冷启动友好（全站热门）；然后是离线推荐，根据用户-物品-评分行为矩阵，计算用户之间的相似度进行推荐
+- **详情页推荐**，字面意思，基于 UserCF 即可；
+
+#### 分层
+
+实时个性化推荐，离线个性化推荐（矩阵），统计推荐（非个性化），相似性推荐（基于内容相似度对比 or “购买了本菜的人也买了”）
+
+核心数据字段：菜品/餐厅的评分；用户对餐厅的评价（UGC）；菜品/餐厅的类别/标签/描述（PGC）；用户 id/菜品 id/餐厅 id 关联
+
+实时推荐服务：根据时段、地点等设定规则；离线推荐服务：算好之后存起来；离线统计服务：数据集统计信息落库；
+
+基于模型；协同过滤；基于内容
+
+美食推荐网站
 
 ## 数据库设计
+
+1. 用户表-user（如果要做用户画像或者人口统计学，则增加字段）
+
+```sql
+CREATE TABLE user (
+  id bigint NOT NULL AUTO_INCREMENT,
+  username varchar(255) NOT NULL,
+  password varchar(255) NOT NULL,
+  email varchar(100) UNIQUE NOT NULL,
+  phone varchar(11) UNIQUE NOT NULL,
+  info longtext DEFAULT NULL,
+  face varchar(255) DEFAULT NULL COMMENT '头像',
+  regtime datetime(6) NOT NULL,
+)
+```
+
+2. 菜品表-myapp_foods 
+```sql
+CREATE TABLE myapp_foods (
+  id bigint NOT NULL AUTO_INCREMENT COMMENT ‘核心关联’,
+  foodname varchar(70) NOT NULL,
+  foodtype varchar(20) NOT NULL COMMENT '菜系种类，核心字段',
+  recommend varchar(255) NULL DEFAULT NULL '推荐理由UGC，核心字段',
+  imgurl varchar(255) NOT NULL,
+  price decimal(5, 2) NOT NULL,    
+)
+```
+
+3. 餐厅表-restaurant
+```sql
+CREATE TABLE restaurant (
+    business_id varchar(255) not null primary key,
+    name varchar(255) not null,
+    categories varchar(255) not null comment '类别，逗号分割',
+    stars decimal defalut null comment '评分，满分五分',
+    review_count int not null default 0 comment '评论数'
+)
+```
 
 ### 核心数据表
 
@@ -88,7 +146,7 @@ pylint 的 vscode 配置如下，请修改为自己的目录：
 ]
 ```
 
-前端类型提示（实际引用lib/esm.js）：
+前端类型提示（实际引用 lib/esm.js）：
 
 ```bash
 npm install -D @types/alpinejs
@@ -115,27 +173,7 @@ python manage.py runserver
 ## 项目结构
 
 ```
-restaurant-recommendation/
-├── config/                 # 项目配置
-│   ├── settings.py
-│   └── urls.py
-├── apps/
-│   ├── user/              # 用户模块
-│   ├── restaurant/        # 餐厅模块
-│   ├── recommendation/    # 推荐引擎核心
-│   │   ├── algorithms/    # 推荐算法实现
-│   │   │   ├── user_based_cf.py
-│   │   │   ├── item_based_cf.py
-│   │   │   └── hybrid.py
-│   │   ├── models.py      # 数据模型
-│   │   └── views.py       # API 接口
-│   └── analytics/         # 数据分析与可视化
-├── static/                # 静态资源
-├── templates/             # HTML 模板
-├── data/                  # 数据集
-│   └── sample_data.csv
-├── notebooks/             # 算法实验 Jupyter 笔记本
-└── requirements.txt
+
 ```
 
 ## 推荐算法说明
@@ -144,25 +182,7 @@ restaurant-recommendation/
 
 ### 算法评估指标
 
-- **准确率 (Precision)**：推荐结果中用户实际喜欢的比例
-- **召回率 (Recall)**：用户喜欢的内容中被成功推荐的比例
-- **覆盖率 (Coverage)**：推荐系统能够覆盖的物品比例
-
-## 关于技术选型的说明
-
-本项目在**算法验证与系统设计**的目标导向下，采用了轻量级技术栈：
-
-| 论文提及        | 实际采用                | 说明                       |
-| --------------- | ----------------------- | -------------------------- |
-| Spark / PySpark | Pandas + NumPy          | 单机数据处理已满足实验需求 |
-| Spark MLlib ALS | Scikit-learn / Surprise | 轻量级协同过滤实现         |
-| HBase           | MySQL                   | 结构化数据关系型存储更简便 |
-| Flink 实时计算  | Django + Redis 缓存     | 准实时推荐通过缓存优化实现 |
-
-**设计考量**：
-
-1. 毕设核心目标是验证算法思想，而非工程规模
-2. MySQL + Redis 足以支撑实验数据量的推荐服务
-3. 轻量级栈降低开发复杂度，聚焦推荐逻辑本身
-
 ## 参考资料
+
+- [HTMX](https://htmx.org/docs/#requests)
+- [Apline](https://alpinejs.dev/directives/cloak)
