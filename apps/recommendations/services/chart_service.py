@@ -15,11 +15,10 @@
 from __future__ import annotations
 
 import json
-import random
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import Any
 
+from django.conf import settings
 from django.db.models import Avg, Count, DateField
 from django.db.models.functions import TruncDate
 
@@ -30,7 +29,15 @@ from apps.users.models import User
 class ChartService:
     """图表数据服务类"""
 
-    DATA_DIR = Path("data/recommendations")
+    DATA_DIR = settings.BASE_DIR / "data" / "recommendations"
+    US_STATES = {
+        "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+        "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+        "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+        "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+        "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+        "DC",
+    }
 
     @classmethod
     def get_food_category_stats(cls) -> dict[str, Any]:
@@ -165,22 +172,29 @@ class ChartService:
             profiles = data.get("profiles", [])
             result = []
 
-            # 随机采样以控制数据量
-            if len(profiles) > limit:
-                profiles = random.sample(profiles, limit)
-
             for item in profiles:
+                if item.get("state") not in cls.US_STATES:
+                    continue
+
+                longitude = item.get("longitude")
+                latitude = item.get("latitude")
+                if longitude is None or latitude is None:
+                    continue
+
                 result.append({
                     "name": item.get("name", ""),
                     "value": [
-                        item.get("longitude", 0),
-                        item.get("latitude", 0),
+                        longitude,
+                        latitude,
                         item.get("stars", 0),
                         item.get("review_count", 0),
                     ],
                     "city": item.get("city", ""),
+                    "state": item.get("state", ""),
                     "categories": item.get("categories", ""),
                 })
+                if len(result) >= limit:
+                    break
 
             return result
         except (json.JSONDecodeError, KeyError, IOError):
@@ -217,7 +231,7 @@ class ChartService:
                 profiles_data = json.load(f)
 
             # 构建业务ID到信息的映射
-            business_info: dict[str, dict[str, str]] = {}
+            business_info: dict[str, dict[str, Any]] = {}
             for item in profiles_data.get("profiles", []):
                 business_id = item.get("business_id", "")
                 if business_id:
@@ -227,6 +241,7 @@ class ChartService:
                     business_info[business_id] = {
                         "name": item.get("name", business_id),
                         "category": main_category,
+                        "review_count": item.get("review_count", 0),
                     }
 
             # 加载相似度数据
@@ -236,6 +251,7 @@ class ChartService:
             nodes: list[dict[str, Any]] = []
             links: list[dict[str, Any]] = []
             node_ids: set[str] = set()
+            link_ids: set[frozenset[str]] = set()
             category_colors: dict[str, int] = {}
             color_index = 0
 
@@ -259,7 +275,7 @@ class ChartService:
                         "id": business_id,
                         "name": info["name"],
                         "category": category,
-                        "symbolSize": 10 + len(links) % 20,  # 随机大小
+                        "symbolSize": cls._network_symbol_size(info.get("review_count", 0)),
                     })
                     node_ids.add(business_id)
 
@@ -285,16 +301,18 @@ class ChartService:
                                 "id": target_id,
                                 "name": info["name"],
                                 "category": category,
-                                "symbolSize": 10 + int(score * 10),
+                                "symbolSize": cls._network_symbol_size(info.get("review_count", 0)),
                             })
                             node_ids.add(target_id)
 
-                        if target_id in node_ids:
+                        link_id = frozenset((business_id, target_id))
+                        if target_id in node_ids and link_id not in link_ids:
                             links.append({
                                 "source": business_id,
                                 "target": target_id,
                                 "value": round(score, 3),
                             })
+                            link_ids.add(link_id)
 
             return {
                 "nodes": nodes,
@@ -303,3 +321,12 @@ class ChartService:
             }
         except (json.JSONDecodeError, KeyError, IOError):
             return {"nodes": [], "links": [], "categories": []}
+
+    @staticmethod
+    def _network_symbol_size(review_count: Any) -> int:
+        """根据真实评论数生成稳定的网络节点大小。"""
+        try:
+            count = int(review_count)
+        except (TypeError, ValueError):
+            count = 0
+        return max(10, min(30, 10 + count // 50))

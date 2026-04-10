@@ -230,11 +230,10 @@ export function dashboardChart() {
     },
 
     /**
-     * 加载图表3数据 - 餐厅地理分布
+     * 加载图表3数据 - 美国餐厅地理分布
      */
     loadChart3() {
-      // 加载美国地图
-      fetch('https://cdn.jsdelivr.net/npm/echarts@5.4.3/map/json/usa.json')
+      fetch('/static/geo/usa.json')
         .then(res => res.json())
         .then(usaJson => {
           echarts.registerMap('usa', usaJson);
@@ -251,7 +250,7 @@ export function dashboardChart() {
                   return `${params.name}<br/>
                           评分: ${v[2]}<br/>
                           评论数: ${v[3]}<br/>
-                          城市: ${params.data.city || 'N/A'}`;
+                          城市: ${params.data.city || 'N/A'}, ${params.data.state || ''}`;
                 }
               },
               visualMap: {

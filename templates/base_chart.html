@@ -48,7 +48,7 @@
         xhr.onload = () => {
           if (xhr.status === 200) {
             const response = JSON.parse(xhr.responseText);
-            if (response.code === 0 && response.data) {
+            if (response.code === 200 && response.data) {
               chart.setOption(response.data, true);
             }
           }
@@ -63,7 +63,7 @@
           if (chart && event.detail.success) {
             try {
               const data = JSON.parse(event.detail.xhr.responseText);
-              if (data.code === 0 && data.data) {
+              if (data.code === 200 && data.data) {
                 chart.setOption(data.data, true);
               }
             } catch (e) {
