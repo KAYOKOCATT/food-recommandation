@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+{% load static %}
+
+<!--
+  ECharts 数据可视化基模板
+  ========================
+  用于数据可视化页面，继承自 layout.html
+  包含 ECharts CDN + HTMX 异步加载图表数据支持
+
+  使用方式：
+  [% extends 'base_chart.html' %]
+  [% block content %]
+    <div id="main-chart" style="height: 400px;"></div>
+  [% endblock %]
+
+  [% block chart_scripts %]
+    <script>
+      var chart = echarts.init(document.getElementById('main-chart'));
+      // ... 图表配置
+    </script>
+  [% endblock chart_scripts %]
+-->
+
+{% block extra_head %}
+  {# ECharts 核心库 #}
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  {# HTMX 增强（已包含在 layout.html 中，但确保事件处理可用）#}
+  <script>
+    // ECharts + HTMX 集成工具
+    window.ChartUtils = {
+      // 初始化图表并绑定到元素
+      initChart(elementId, option = {}) {
+        const dom = document.getElementById(elementId);
+        if (!dom) return null;
+        const chart = echarts.init(dom);
+        chart.setOption(option);
+        // 响应式调整
+        window.addEventListener('resize', () => chart.resize());
+        return chart;
+      },
+
+      // 通过 HTMX 加载图表数据
+      loadChartData(chart, url, method = 'GET', data = null) {
+        const xhr = new XMLHttpRequest();
+        xhr.open(method, url);
+        xhr.setRequestHeader('X-CSRFToken', document.querySelector('meta[name=csrf-token]')?.content || '');
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            if (response.code === 0 && response.data) {
+              chart.setOption(response.data, true);
+            }
+          }
+        };
+        xhr.send(data);
+      },
+
+      // HTMX 响应处理器 - 用于 hx-target 到图表
+      htmxChartUpdate(elementId) {
+        return (event) => {
+          const chart = echarts.getInstanceByDom(document.getElementById(elementId));
+          if (chart && event.detail.success) {
+            try {
+              const data = JSON.parse(event.detail.xhr.responseText);
+              if (data.code === 0 && data.data) {
+                chart.setOption(data.data, true);
+              }
+            } catch (e) {
+              console.error('图表数据解析失败:', e);
+            }
+          }
+        };
+      }
+    };
+  </script>
+{% endblock extra_head %}
+
+{% block extra_js %}
+  {% block chart_scripts %}
+  {% endblock chart_scripts %}
+{% endblock extra_js %}

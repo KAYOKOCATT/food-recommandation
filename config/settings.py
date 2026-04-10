@@ -41,8 +41,6 @@ INSTALLED_APPS = [
     'apps.foods',  # 食物模块
     'apps.recommendations.apps.RecommendationsConfig',
     'django_htmx',  # 第三方-HTMX增强
-    'compressor',  # 第三方-SCSS/JS压缩
-
 ]
 
 MIDDLEWARE = [
@@ -124,28 +122,7 @@ STATICFILES_DIRS: list[Path] = [
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Django Compressor
-COMPRESS_ENABLED = True
-COMPRESS_OFFLINE = not DEBUG  # 生产环境预编译
-COMPRESS_PRECOMPILERS = (
-    # 添加对 JavaScript 模块的支持
-    ('text/x-scss', 'django_libsass.SassCompiler'),
-    ('text/javascript', 'uglifyjs -o {outfile}'),
-    ('application/javascript', 'uglifyjs -o {outfile}'),
-    ('module', None),  # 让 module 类型不被压缩处理
-)
-COMPRESS_CSS_FILTERS = [
-    # creates absolute urls from relative ones
-    'compressor.filters.css_default.CssAbsoluteFilter',
-    # css minimizer
-    'compressor.filters.cssmin.CSSMinFilter'
-]
-COMPRESS_JS_FILTERS = [
-    'compressor.filters.jsmin.JSMinFilter'
-]
-
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'compressor.finders.CompressorFinder'  # 关键：让 compressor 能找到压缩后的文件
 )
