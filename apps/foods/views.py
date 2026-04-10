@@ -13,8 +13,12 @@
     ]
 """
 from typing import Any
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from mypy.exportjson import Json
+
+from apps.users.models import User
 from .models import Foods, Comment, Collect
 
 
@@ -63,3 +67,25 @@ def detail(request, foodid: int = None):
         "is_collect":is_collect,#是否收藏
     }
     return render(request, "auth/food_detail.html", context)
+
+def addcollect(request, foodid: int = None):
+    if request.method == "POST":
+        user_id =request.session.get("user_id")
+        user = User.objects.get(id=user_id)
+        foodobj = Foods.objects.get(id=foodid)
+        if not Collect.objects.filter(user_id=user_id, food=foodobj).exists():
+            collect_item = Collect(user=user, food=foodobj)
+            collect_item.save()
+        return JsonResponse({'status':'success','message':'收藏成功'})
+    return JsonResponse({'status':'error','message':'收藏失败'},status=400)
+
+def removecollect(request, foodid: int = None):
+    if request.method == "POST":
+        user_id =request.session.get("user_id")
+        user = User.objects.get(id=user_id)
+        foodobj = Foods.objects.get(id=foodid)
+        if Collect.objects.filter(user_id=user_id, food=foodobj).exists():
+            collect_item = Collect.objects.filter(user_id=user_id, food=foodobj).first()
+            collect_item.delete()
+        return JsonResponse({'status':'success','message':'取消收藏成功'})
+    return JsonResponse({'status':'error','message':'取消收藏失败'},status=400)

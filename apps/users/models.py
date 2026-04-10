@@ -3,7 +3,6 @@
 
 本模块定义了系统的核心数据模型：
 - User: 用户模型，处理用户认证和个人信息
-- Foods: 菜品模型，管理餐厅菜品信息
 
 依赖：
     - django.db.models: Django ORM 基础模型

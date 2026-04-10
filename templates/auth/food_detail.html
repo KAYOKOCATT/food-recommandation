@@ -41,13 +41,13 @@
                                             <div class="page-title-3">
                                                 <h1>{{ foodinfo.foodname }}</h1>
                                             </div>
-                                            <div class="product-reviews-summary mb-3">
+                                            {% comment %} <div class="product-reviews-summary mb-3">
                                                 <div class="rating-summary d-flex">
                                                     <a href="#" class="mr-1">
-                                                        <i class="da da-star"></i>
+                                                        <i class="fa fa-star"></i>
                                                     </a>
                                                 </div>
-                                            </div>
+                                            </div> {% endcomment %}
                                             <div class="product-social-links mb-3">
                                                 <div class="product-addto-links-text d-flex align-items-center">
                                                     <span class="font-weight-bold text-dark">菜系</span>
@@ -79,5 +79,44 @@
             </div>
         </div>
     </div>
-</div>
+
+<script>
+    document.getElementById('addcollect').addEventListener('click',function(){
+        var collectButton = this;
+        var isCollect = collectButton.getAttribute('data-is-collect') === 'true';
+
+        var addCollectUrl = '{% url "addcollect" foodinfo.id %}';
+        var removeCollectUrl = '{% url "removecollect" foodinfo.id %}';
+
+        var url = isCollect ? removeCollectUrl : addCollectUrl;
+
+        fetch(url,{
+            method:'POST',
+            headers:{
+                'X-CSRFToken':'{{ csrf_token }}'
+            },
+            body: new URLSearchParams()
+        })
+        .then(response=>response.json())
+        .then(data=>{
+            if(data.status === 'success'){
+                if(isCollect){
+                    collectButton.classList.remove('btn-danger');
+                    collectButton.classList.add('btn-secondary');
+                    collectButton.setAttribute('data-is-collect','false');
+                }else{
+                    collectButton.classList.add('btn-danger');
+                    collectButton.classList.remove('btn-secondary');
+                    collectButton.setAttribute('data-is-collect','true');
+                }
+            }else {
+                alert(data.message || '操作失败');
+            }
+        })
+        .catch(error => {
+            console.error('请求失败:', error);
+            alert('网络请求失败，请稍后重试');
+        });
+    });
+</script>
 {% endblock %}
