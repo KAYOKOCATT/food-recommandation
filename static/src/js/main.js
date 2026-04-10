@@ -16,6 +16,7 @@ import { logger } from "./utils/logger.js";
 import { eventBus } from "./utils/event-bus.js";
 import { loginForm } from "./components/alpine-components.js";
 import { registerForm } from "./components/register-form.js";
+import { dashboardChart } from "./components/chart-components.js";
 
 /**
  * Application configuration
@@ -88,6 +89,7 @@ function setupAlpineComponents() {
   // Register data components
   Alpine.data("loginForm", loginForm);
   Alpine.data("registerForm", registerForm);
+  Alpine.data("dashboardChart", dashboardChart);
 
   logger.success("Alpine components and stores registered");
 }
