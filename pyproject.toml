@@ -34,6 +34,7 @@ disable = [
     "trailing-whitespace",
     "missing-final-newline",
     "too-few-public-methods",
+    "new-db-field-with-default"
 ]
 
 [tool.pylint.format]

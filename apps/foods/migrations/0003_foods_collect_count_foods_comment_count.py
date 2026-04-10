@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('foods', '0002_alter_comment_realname_and_more'),
     ]
-# pylint: disable=new-db-field-with-default
+
     operations = [
         migrations.AddField(
             model_name='foods',
