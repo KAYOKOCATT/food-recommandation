@@ -12,6 +12,7 @@
         path('list/', food_list, name='food_list'),
     ]
 """
+from datetime import date, datetime
 from typing import Any
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -89,3 +90,29 @@ def removecollect(request, foodid: int = None):
             collect_item.delete()
         return JsonResponse({'status':'success','message':'取消收藏成功'})
     return JsonResponse({'status':'error','message':'取消收藏失败'},status=400)
+
+def comment(request, foodid: int = None):
+    if request.method == "POST":
+        uid =request.session.get("user_id")
+        user = User.objects.get(id=uid)
+        realname = user.username
+        comment_text = request.POST.get("comment",'')
+        
+        commentdata={
+            "uid":uid,
+            "fid":foodid,
+            "realname":realname,
+            "content":comment_text,
+            "ctime":datetime.now(),
+        }
+        commentobj = Comment(**commentdata)
+        commentobj.save()
+        
+        response_data = {
+            "status":"success",
+            "realname":realname,
+            "comment":comment_text,
+            "ctime":commentobj.ctime.strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        return JsonResponse(response_data)
+    return JsonResponse({'status':'error'},status=400)

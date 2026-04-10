@@ -7,5 +7,6 @@ urlpatterns = [
     
     path('addcollect/<int:foodid>/', views.addcollect, name='addcollect'),
     path('removecollect/<int:foodid>/', views.removecollect, name='removecollect'),
+    path('comment/<int:foodid>/', views.comment, name='comment'),
 
 ]

@@ -69,6 +69,86 @@
                                                     </a>
                                                 </form>
                                             </div>
+                                            <div class="prodeuct-info-area mt-80">
+                                                <ul class="nav nav-tabs xoric-tabs border-bottom mb-4 pb-2"
+                                                    role="tablist">
+                                                    <li class="nav-item">
+                                                        <a href="#Deatails"
+                                                           class="nav-link active font-weight-bold"
+                                                           data-toggle="tab">美食详情</a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a href="#Reviews" class="nav-link font-weight-bold" data-toggle="tab">美食评论</a>
+                                                    </li>
+                                                </ul>
+                                                <div class="tab-content" xoric-tabs-content p-3 border rounded>
+                                                    <div class="tab-pane active show" id="Deatails">
+                                                        <div class="valu mb-4">
+                                                            <p class="text-muted">
+                                                                {% autoescape off %}
+                                                                    {{ foodinfo.fooddetail }}
+                                                                {% endautoescape %}
+                                                            </p>
+                                                        </div>
+                                                        <!-- 推荐美食详情 -->
+                                                        <div class="product-social-links bg-light p-3 rounded border">
+                                                            <div class="product-addto-links-text ">
+                                                                <p class="mb-0 text-secondary">{{ foodinfo.recommend }}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- 美食评论 -->
+                                                    <div class="tab-pane" id="Reviews">
+                                                        <div class="valu valu-2">
+                                                            <div class="section-title mb-4">
+                                                                <h3 class="font-weight-bold text-dark">美食评论</h3>
+                                                            </div>
+                                                            <ul class="product-social-links list-unstyled bg-light p-3 rounded border">
+                                                                {% for comment in commentlist %}
+                                                                    <li class="mb-3 p-3 rounded border bg-white">
+                                                                        <div class="review-right">
+                                                                            <!-- 评论内容 -->
+                                                                            <div class="review-details mb-2">
+                                                                                <span class="font-weight-bold text-dark">{{ comment.realname }}</span>
+                                                                                <span class="ml-2 text-secondary">{{ comment.content }}</span>
+                                                                            </div>
+                                                                            <!-- 评论时间 -->
+                                                                            <div class="review-time small text-muted">评论时间: {{ comment.ctime }}</div>
+                                                                        </div>
+                                                                    </li>
+                                                                {% endfor %}
+                                                            </ul>
+                                                            <!-- 发表评论 -->
+                                                            <div class="review-add mt-4">
+                                                                <h4 class="font-weight-bold">发表自己意见</h4>
+                                                            </div>
+                                                            <!-- 发表评论表单 -->
+                                                            <form id="commentForm"
+                                                                  action="{% url 'comment' foodinfo.id %}"
+                                                                  method="post"
+                                                                  class="pt-3">
+                                                                {% csrf_token %}
+                                                                <div class="review-form d-flex align-items-center">
+                                                                    <div class="review-form flex-grow-1 mb-0 mr-3">
+                                                                        <textarea name="comment"
+                                                                                  id="commentText"
+                                                                                  class="form-control border"
+                                                                                  rows="1"
+                                                                                  placeholder="请输入评论内容"
+                                                                                  required></textarea>
+                                                                    </div>
+                                                                    <!-- 发表评论按钮 -->
+                                                                    <div class="review-form-button">
+                                                                        <button type="submit" class="btn btn-primary">
+                                                                            <i class="fas fa-paper-plane"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -78,8 +158,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
 <script>
     document.getElementById('addcollect').addEventListener('click',function(){
         var collectButton = this;
@@ -118,5 +196,8 @@
             alert('网络请求失败，请稍后重试');
         });
     });
+</script>
+<script>
+
 </script>
 {% endblock %}
