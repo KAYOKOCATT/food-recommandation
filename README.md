@@ -10,7 +10,7 @@
 - Yelp 数据集探索 notebook，已验证内容推荐实验方向。
 - mypy、pylint、djlint 的项目级配置。
 
-推荐系统尚未完整接入 Web 页面。当前路线是：中文菜品做统计推荐，Yelp 餐厅做内容推荐和邻域协同过滤，实时推荐只做基于最近行为的离线候选重排。
+推荐系统尚未完整接入 Web 页面。当前路线是：中文菜品做统计推荐和演示型收藏协同过滤，Yelp 餐厅做内容推荐和邻域协同过滤，实时推荐只做基于最近行为的离线候选重排。
 
 ## 技术栈
 
@@ -27,10 +27,11 @@
 
 ## 推荐分层
 
-1. 中文菜品统计推荐：基于已有菜品表、收藏数、评论数、菜系、价格等粗粒度信息生成榜单；因为没有可靠用户行为数据，不做内容推荐或协同过滤。
-2. Yelp 餐厅内容推荐：基于 business/categories/review/tip 等文本和属性做 TF-IDF 特征，离线生成相似餐厅。
-3. Yelp 餐厅协同过滤：基于 review 评分构造 user-business 矩阵，实现 UserCF/ItemCF 这类邻域算法，不把矩阵分解作为 v1 主线。
-4. 实时重排：根据用户最近浏览、收藏或评分，读取离线相似度候选，用简单权重合并和过滤，不在线训练模型。
+1. 中文菜品统计推荐：基于已有菜品表、收藏数、评论数、菜系、价格等粗粒度信息生成榜单。
+2. 中文菜品收藏协同过滤：基于 `Collect(user_id, food_id)` 生成 0/1 隐式反馈矩阵，实现演示型 ItemCF/UserCF。收藏数据可以用命令生成，但必须标注为模拟数据，不作为真实效果评估依据。
+3. Yelp 餐厅内容推荐：基于 business/categories/review/tip 等文本和属性做 TF-IDF 特征，离线生成相似餐厅。
+4. Yelp 餐厅协同过滤：基于 review 评分构造 user-business 矩阵，实现 UserCF/ItemCF 这类邻域算法，不把矩阵分解作为 v1 主线。
+5. 实时重排：根据用户最近浏览、收藏或评分，读取离线相似度候选，用简单权重合并和过滤，不在线训练模型。
 
 当前已提供 `apps.recommendations.services.rerank_from_recent_items`，可读取 JSON 格式的离线相似度文件并做最近行为重排。
 
@@ -45,6 +46,24 @@
   "business_2": ["business_4", "business_5"]
 }
 ```
+
+中文菜品收藏协同过滤命令：
+
+```bash
+# 只预览会生成多少条模拟收藏，不写库
+python manage.py generate_demo_collects --dry-run
+
+# 写入演示收藏数据。该数据是 synthetic implicit feedback，不是真实行为。
+python manage.py generate_demo_collects --per-user 8 --seed 20260410
+
+# 从 Collect 表生成 ItemCF/UserCF 离线 JSON
+python manage.py build_food_collect_cf --algorithm both --top-k 20
+```
+
+默认输出：
+
+- `data/recommendations/food_itemcf.json`：菜品到相似菜品。
+- `data/recommendations/food_usercf.json`：用户到候选菜品。
 
 ## 快速开始
 

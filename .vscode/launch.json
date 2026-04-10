@@ -1,19 +1,39 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Django Debug Server",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/manage.py",
-            "args": [
-                "runserver",
-                "8000",
-                "--noreload"
-            ],
-            "django": true,
-            "justMyCode": true,
-            "cwd": "${workspaceFolder}"
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Django Debug Server",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["runserver", "8000", "--noreload"],
+      "django": true,
+      "justMyCode": true,
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Django: generate_demo_collects",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": [
+        "generate_demo_collects",
+        "--per-user",
+        "8",
+        "--seed",
+        "20260410"
+      ],
+      "django": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Django: build_food_collect_cf",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["build_food_collect_cf", "--algorithm", "both", "--top-k", "20"],
+      "django": true,
+      "console": "integratedTerminal"
+    }
+  ]
 }
