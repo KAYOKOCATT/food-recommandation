@@ -187,7 +187,7 @@ class ChartService:
             return []
 
     @classmethod
-    def get_similarity_network(
+    def get_similarity_network(  # pylint: disable=too-many-locals,too-many-nested-blocks
         cls, limit: int = 100, similarity_threshold: float = 0.5
     ) -> dict[str, Any]:
         """
@@ -217,7 +217,7 @@ class ChartService:
                 profiles_data = json.load(f)
 
             # 构建业务ID到信息的映射
-            business_info = {}
+            business_info: dict[str, dict[str, str]] = {}
             for item in profiles_data.get("profiles", []):
                 business_id = item.get("business_id", "")
                 if business_id:
@@ -233,10 +233,10 @@ class ChartService:
             with open(similarity_path, "r", encoding="utf-8") as f:
                 similarity_data = json.load(f)
 
-            nodes = []
-            links = []
-            node_ids = set()
-            category_colors = {}
+            nodes: list[dict[str, Any]] = []
+            links: list[dict[str, Any]] = []
+            node_ids: set[str] = set()
+            category_colors: dict[str, int] = {}
             color_index = 0
 
             # 选择前limit个业务作为节点
@@ -244,7 +244,10 @@ class ChartService:
 
             for business_id in business_ids:
                 if business_id not in node_ids:
-                    info = business_info.get(business_id, {"name": business_id, "category": "Unknown"})
+                    info = business_info.get(
+                        business_id,
+                        {"name": business_id, "category": "Unknown"},
+                    )
                     category = info["category"]
 
                     # 为分类分配颜色索引
@@ -268,7 +271,10 @@ class ChartService:
                     if target_id and score >= similarity_threshold:
                         # 确保目标节点也在列表中
                         if target_id not in node_ids and len(nodes) < limit:
-                            info = business_info.get(target_id, {"name": target_id, "category": "Unknown"})
+                            info = business_info.get(
+                                target_id,
+                                {"name": target_id, "category": "Unknown"},
+                            )
                             category = info["category"]
 
                             if category not in category_colors:
@@ -293,7 +299,7 @@ class ChartService:
             return {
                 "nodes": nodes,
                 "links": links,
-                "categories": [{"name": cat} for cat in category_colors.keys()],
+                "categories": [{"name": cat} for cat in category_colors],
             }
         except (json.JSONDecodeError, KeyError, IOError):
             return {"nodes": [], "links": [], "categories": []}

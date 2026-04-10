@@ -1,4 +1,4 @@
-"""
+""" 
 图表API视图模块
 
 提供四个图表数据的API端点：
@@ -17,6 +17,7 @@
     - django.shortcuts.render: 模板渲染
     - apps.recommendations.services.chart_service.ChartService: 数据服务
 """
+# pylint: disable=broad-exception-caught
 from typing import Any
 
 from django.http import HttpRequest, JsonResponse

@@ -66,19 +66,55 @@ def recommend_foods_by_usercf(
     return _hydrate_food_candidates(candidates, source="usercf")
 
 
+def similar_foods_for_detail(
+    food_id: int,
+    similarity_file: str | Path,
+    *,
+    top_k: int = 6,
+) -> list[FoodRecommendation]:
+    if top_k <= 0:
+        return []
+
+    try:
+        candidates = similarity_cache.get(similarity_file).get(str(food_id), [])
+    except (OSError, ValueError):
+        return []
+
+    filtered_candidates = [
+        candidate
+        for candidate in candidates
+        if candidate.item_id != str(food_id) and _parse_food_id(candidate.item_id) is not None
+    ][:top_k]
+    return _hydrate_food_candidates(filtered_candidates, source="itemcf")
+
+
 def _hydrate_food_candidates(
     candidates: list[RecommendationCandidate],
     *,
     source: str,
 ) -> list[FoodRecommendation]:
-    food_ids = [int(candidate.item_id) for candidate in candidates]
-    foods_by_id = Foods.objects.in_bulk(food_ids)
-    return [
-        FoodRecommendation(
-            food=foods_by_id[food_id],
-            score=candidate.score,
-            source=source,
-        )
+    food_ids = [
+        food_id
         for candidate in candidates
-        if (food_id := int(candidate.item_id)) in foods_by_id
+        if (food_id := _parse_food_id(candidate.item_id)) is not None
     ]
+    foods_by_id = Foods.objects.in_bulk(food_ids)
+    recommendations: list[FoodRecommendation] = []
+    for candidate in candidates:
+        food_id = _parse_food_id(candidate.item_id)
+        if food_id is not None and food_id in foods_by_id:
+            recommendations.append(
+                FoodRecommendation(
+                    food=foods_by_id[food_id],
+                    score=candidate.score,
+                    source=source,
+                )
+            )
+    return recommendations
+
+
+def _parse_food_id(item_id: str) -> int | None:
+    try:
+        return int(item_id)
+    except ValueError:
+        return None

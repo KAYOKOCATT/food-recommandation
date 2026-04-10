@@ -1,5 +1,6 @@
 from typing import Any
 
+from django.conf import settings
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import F
 from django.http import JsonResponse
@@ -9,6 +10,7 @@ from django.views.decorators.http import require_POST
 
 from apps.users.models import User
 from .models import Collect, Comment, Foods
+from .services import similar_foods_for_detail
 
 
 def food_list(request) -> Any:
@@ -47,6 +49,7 @@ def food_list(request) -> Any:
 def detail(request, foodid: int):
     foodobj = get_object_or_404(Foods, id=foodid)
     commentlist = Comment.objects.filter(fid=foodid).order_by("-ctime")
+    similarity_file = settings.BASE_DIR / "data" / "recommendations" / "food_itemcf.json"
 
     is_collect = False
     user_id = request.session.get("user_id")
@@ -58,6 +61,7 @@ def detail(request, foodid: int):
         "foodlist": food_list,
         "commentlist": commentlist,
         "is_collect": is_collect,  # 是否收藏
+        "similar_foods": similar_foods_for_detail(foodid, similarity_file, top_k=6),
     }
     return render(request, "auth/food_detail.html", context)
 

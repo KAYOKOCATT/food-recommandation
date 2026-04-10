@@ -152,6 +152,50 @@
                         </div>
                     </div>
                 </div>
+                <div class="row mt-4">
+                    <div class="col-xl-10 mx-auto">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <h4 class="card-title mb-0">与此菜品相似的菜品</h4>
+                                    <span class="text-muted small">基于收藏相似度</span>
+                                </div>
+                                {% if similar_foods %}
+                                    <div class="row">
+                                        {% for item in similar_foods %}
+                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-3">
+                                                <a href="{% url 'food_detail' item.food.id %}"
+                                                   class="text-decoration-none text-dark">
+                                                    <div class="border rounded h-100 overflow-hidden">
+                                                        <div style="width: 100%; aspect-ratio: 1 / 1; overflow: hidden;">
+                                                            <img src="{{ item.food.imgurl }}"
+                                                                 alt="{{ item.food.foodname }}"
+                                                                 class="img-fluid"
+                                                                 style="width: 100%; height: 100%; object-fit: cover;">
+                                                        </div>
+                                                        <div class="p-2">
+                                                            <h6 class="mb-1 text-truncate">{{ item.food.foodname }}</h6>
+                                                            <p class="mb-1 small text-muted">{{ item.food.foodtype }}</p>
+                                                            <div class="d-flex justify-content-between small">
+                                                                <span>￥{{ item.food.price|floatformat:2 }}</span>
+                                                                <span>相似度 {{ item.score|floatformat:2 }}</span>
+                                                            </div>
+                                                            <div class="small text-muted mt-1">
+                                                                收藏 {{ item.food.collect_count }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted mb-0">暂无相似菜品推荐</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <script>
