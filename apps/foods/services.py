@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from django.db.models import Count, QuerySet
+from django.db.models import QuerySet
 
 from apps.recommendations.services import (
     RecommendationCandidate,
@@ -20,13 +20,12 @@ class FoodRecommendation:
 
 
 def popular_foods(limit: int = 20) -> QuerySet[Foods]:
-    """Statistical fallback for Chinese dish data without reliable behavior records."""
+    """Statistical fallback for Chinese dish data."""
     safe_limit = max(limit, 1)
     return (
-        Foods.objects.annotate(
-            collect_count=Count("collect", distinct=True),
-        )
-        .order_by("-collect_count", "foodtype", "foodname")[:safe_limit]
+        Foods.objects.order_by("-collect_count", "-comment_count", "foodtype", "foodname")[
+            :safe_limit
+        ]
     )
 
 

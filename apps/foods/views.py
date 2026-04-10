@@ -1,6 +1,7 @@
 from typing import Any
 
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db.models import F
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
@@ -75,7 +76,9 @@ def addcollect(request, foodid: int):
         return JsonResponse({'status': 'error', 'message': '请先登录'}, status=401)
 
     foodobj = get_object_or_404(Foods, id=foodid)
-    Collect.objects.get_or_create(user=user, food=foodobj)
+    _, created = Collect.objects.get_or_create(user=user, food=foodobj)
+    if created:
+        Foods.objects.filter(id=foodobj.id).update(collect_count=F("collect_count") + 1)
     return JsonResponse({'status': 'success', 'message': '收藏成功'})
 
 
@@ -86,7 +89,11 @@ def removecollect(request, foodid: int):
         return JsonResponse({'status': 'error', 'message': '请先登录'}, status=401)
 
     foodobj = get_object_or_404(Foods, id=foodid)
-    Collect.objects.filter(user=user, food=foodobj).delete()
+    deleted_count, _ = Collect.objects.filter(user=user, food=foodobj).delete()
+    if deleted_count:
+        Foods.objects.filter(id=foodobj.id, collect_count__gt=0).update(
+            collect_count=F("collect_count") - 1
+        )
     return JsonResponse({'status': 'success', 'message': '取消收藏成功'})
 
 
@@ -108,6 +115,7 @@ def comment(request, foodid: int):
         content=comment_text,
         ctime=timezone.now(),
     )
+    Foods.objects.filter(id=foodid).update(comment_count=F("comment_count") + 1)
 
     response_data = {
         "status": "success",

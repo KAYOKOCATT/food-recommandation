@@ -46,6 +46,8 @@ class Foods(models.Model):
     recommend = models.CharField(max_length=255, null=True, blank=True)
     imgurl = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=5, decimal_places=2)
+    collect_count = models.PositiveIntegerField(default=0, db_index=True)
+    comment_count = models.PositiveIntegerField(default=0, db_index=True)
 
     def __str__(self) -> str:
         return self.foodname

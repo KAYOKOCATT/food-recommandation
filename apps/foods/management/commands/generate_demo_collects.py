@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from django.core.management.base import BaseCommand, CommandParser
+from django.db.models import F
 
 from apps.foods.models import Collect, Foods
 from apps.users.models import User
@@ -106,6 +107,7 @@ def _generate_collects_for_user(
 
         _, created = Collect.objects.get_or_create(user=user, food=food)
         if created:
+            Foods.objects.filter(id=food.id).update(collect_count=F("collect_count") + 1)
             created_count += 1
         else:
             skipped_count += 1
