@@ -1,5 +1,6 @@
 import random
 import os
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -25,10 +26,22 @@ def run_sql(csv_path: str = "food.csv") -> None:
         description = str(data['描述'])
         if len(description) > 255:
             description = description[:255]
-        values = (data['标题'], data['类型'], description, data['图片'], price_random)
+        collect_count = parse_stat_count(data.get('收藏数量', 0))
+        comment_count = parse_stat_count(data.get('评论数量', 0))
+        values = (
+            data['标题'],
+            data['类型'],
+            description,
+            data['图片'],
+            price_random,
+            collect_count,
+            comment_count,
+        )
         sql = """
-            insert into myapp_foods(foodname, foodtype, recommend, imgurl, price)
-            values (%s, %s, %s, %s, %s)
+            insert into myapp_foods(
+                foodname, foodtype, recommend, imgurl, price, collect_count, comment_count
+            )
+            values (%s, %s, %s, %s, %s, %s, %s)
         """
 
         try:
@@ -39,6 +52,24 @@ def run_sql(csv_path: str = "food.csv") -> None:
             connection.rollback()
     cursor.close()
     connection.close()
+
+
+def parse_stat_count(raw_value: object) -> int:
+    text = "" if raw_value is None else str(raw_value).strip()
+    if not text or text.lower() == "nan":
+        return 0
+
+    compact_text = text.replace(",", "")
+    match = re.search(r"(\d+(?:\.\d+)?)", compact_text)
+    if match is None:
+        return 0
+
+    number = float(match.group(1))
+    if "万" in compact_text:
+        number *= 10000
+    elif "千" in compact_text:
+        number *= 1000
+    return max(int(number), 0)
 
 
 if __name__ == "__main__":
