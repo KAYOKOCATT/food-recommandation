@@ -311,8 +311,8 @@ export function registerForm() {
         logger.error("Registration failed", error);
 
         // Handle server errors
-        if (error.data && error.data.error) {
-          const errorMsg = error.data.error;
+        if (error.data && (error.data.error || error.data.msg)) {
+          const errorMsg = error.data.error || error.data.msg;
 
           // Show error notification
           this.showNotification(errorMsg, "error");

@@ -24,13 +24,13 @@
 """
 import json
 import re
-from django import forms
-from django.shortcuts import render, redirect
-from django.http import HttpRequest, JsonResponse, HttpResponse
-from django.contrib.auth.hashers import check_password
-from typing import Any, Union, Optional
+from json import JSONDecodeError
+from typing import Optional, Union
 
-from django.views.decorators.csrf import csrf_exempt
+from django import forms
+from django.contrib.auth.hashers import check_password
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.shortcuts import redirect, render
 
 from apps.users.models import User
 
@@ -90,35 +90,30 @@ def login(request: HttpRequest) -> Union[JsonResponse, HttpResponse]:
     """
 
     if request.method == 'POST':
-        data: dict[str, str] = json.loads(request.body)
+        try:
+            data: dict[str, str] = json.loads(request.body)
+        except JSONDecodeError:
+            return api_response(code=4001, msg='请求体不是合法 JSON', data={}, status=400)
+
         username: Optional[str] = data.get('username')
         password: Optional[str] = data.get('password')
         if not username or not password:
-            return JsonResponse({
-                'code': 500,
-                'data': {},
-                'msg': '用户名和密码不能为空'
-            }, status=200)
+            return api_response(code=4002, msg='用户名和密码不能为空', data={}, status=400)
 
         user: Optional[User] = User.objects.filter(username=username).first()
 
         if user and check_password(password, user.password):
             request.session['user_id'] = user.id
-            return JsonResponse({
-                'code': 200,
-                'data': {
+            return api_response(
+                code=200,
+                msg='登录成功',
+                data={
                     'user_id': user.id,
                     'username': user.username,
-                    'redirect': 'auth/user_index.html'
+                    'redirect': '/api/v1/user_index/',
                 },
-                'msg': '登录成功'
-            }, status=200)
-        else:
-            return JsonResponse({
-                'code': 500,
-                'data': {},
-                'msg': '用户名或密码错误'
-            }, status=200)
+            )
+        return api_response(code=4003, msg='用户名或密码错误', data={}, status=401)
     return render(request, 'auth/login-refactored.html')
 
 
@@ -167,21 +162,29 @@ class RegisterForm(forms.Form):
 # ---------- 视图 ----------
 
 
-@csrf_exempt   # JSON 请求建议豁免 CSRF，生产环境可替换为 Token 认证
 def register(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
+        try:
+            data = json.loads(request.body)
+        except JSONDecodeError:
+            return api_response(code=4001, msg='请求体不是合法 JSON', data={}, status=400)
+
         form = RegisterForm(data)
         if not form.is_valid():
             first_error = next(iter(form.errors.values()))[0]
-            return api_response(code=4002, msg=first_error, data=form.errors)
+            return api_response(
+                code=4002,
+                msg=first_error,
+                data=form.errors.get_json_data(),
+                status=400,
+            )
 
         # 3. 创建用户（密码自动哈希）
         user: User = User.objects.create(
             username=form.cleaned_data['username'],
             password=form.cleaned_data['password'],
             email=form.cleaned_data['email'],
-            phone=form.cleaned_data['phone']   # 假设 User 模型已扩展 phone 字段
+            phone=form.cleaned_data['phone'],
         )
 
         # 4. 成功响应
@@ -195,7 +198,6 @@ def register(request):
     return render(request, 'auth/register-refactored.html')
 
 def user_index(request):
-    
     return render(request, 'auth/user_index.html')
 
 def logout(request):

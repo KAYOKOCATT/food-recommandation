@@ -161,7 +161,7 @@ export function createFormComponent(config) {
       const Alpine = window.Alpine;
       if (Alpine?.store("notification")) {
         const message =
-          error.data?.error || error.message || "Submission failed";
+          error.data?.error || error.data?.msg || error.message || "Submission failed";
         Alpine.store("notification").show(message, "error");
       }
     },

@@ -1,5 +1,6 @@
 [tool.mypy]
 python_version = "3.12"
+explicit_package_bases = true
 plugins = [
     "mypy_django_plugin.main",
     "mypy_drf_plugin.main",
@@ -8,6 +9,37 @@ plugins = [
 strict = false
 warn_unused_configs = true
 ignore_missing_imports = true
+exclude = [
+    "^apps/.*/migrations/",
+]
 
 [tool.django-stubs]
 django_settings_module = "config.settings"
+
+[tool.pylint.main]
+load-plugins = ["pylint_django"]
+django-settings-module = "config.settings"
+jobs = 1
+persistent = false
+ignore-paths = [
+    "^apps/.*/migrations/.*$",
+]
+
+[tool.pylint.messages_control]
+disable = [
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "mixed-line-endings",
+    "trailing-whitespace",
+    "missing-final-newline",
+    "too-few-public-methods",
+]
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.djlint]
+profile = "django"
+max_line_length = 120
+ignore = "H006,H021"

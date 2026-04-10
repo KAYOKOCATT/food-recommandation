@@ -1,32 +1,19 @@
-"""
-菜品相关视图模块
-处理菜品相关的 HTTP 请求，包括列表查询等。
-依赖：
-    - django.shortcuts.render: 渲染 HTML 模板
-    - django.http: HTTP 响应类
-路由配置：
-    # urls.py
-    from django.urls import path
-    from apps.foods.views import food_list
-    urlpatterns = [
-        path('list/', food_list, name='food_list'),
-    ]
-"""
-from datetime import date, datetime
 from typing import Any
+
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
-from django.shortcuts import render
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from mypy.exportjson import Json
+from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from apps.users.models import User
-from .models import Foods, Comment, Collect
+from .models import Collect, Comment, Foods
 
 
 def food_list(request) -> Any:
-    foodlist = Foods.objects.all()
+    foodlist = Foods.objects.all().order_by("id")
 
-    foodtypes = Foods.objects.values("foodtype").distinct()
+    foodtypes = Foods.objects.values("foodtype").distinct().order_by("foodtype")
     # 分类筛选
     selected_category = request.GET.get("category", 'all')
 
@@ -40,8 +27,7 @@ def food_list(request) -> Any:
     #异常处理
     try:
         page_number = int(page_number)
-        if page_number < 1:
-            page_number = 1
+        page_number = max(page_number, 1)
     except ValueError:
         page_number = 1
 
@@ -49,70 +35,84 @@ def food_list(request) -> Any:
         page_obj = paginator.get_page(page_number)
     except (PageNotAnInteger, EmptyPage):
         page_obj = paginator.page(paginator.num_pages)
-    return render(request, "auth/food_list.html", {"page_obj": page_obj, "foodtypes": foodtypes, "selected_category": selected_category})
+    context = {
+        "page_obj": page_obj,
+        "foodtypes": foodtypes,
+        "selected_category": selected_category,
+    }
+    return render(request, "auth/food_list.html", context)
 
-def detail(request, foodid: int = None):
-    foodobj = Foods.objects.get(id=foodid)
-    
-    commentlist = Comment.objects.filter(fid=foodid)
-    
+
+def detail(request, foodid: int):
+    foodobj = get_object_or_404(Foods, id=foodid)
+    commentlist = Comment.objects.filter(fid=foodid).order_by("-ctime")
+
     is_collect = False
     user_id = request.session.get("user_id")
     if user_id:
         is_collect = Collect.objects.filter(user_id=user_id, food=foodobj).exists()
-        
+
     context = {
         "foodinfo": foodobj,
-        "foodlist":food_list,
-        "commentlist":commentlist,
-        "is_collect":is_collect,#是否收藏
+        "foodlist": food_list,
+        "commentlist": commentlist,
+        "is_collect": is_collect,  # 是否收藏
     }
     return render(request, "auth/food_detail.html", context)
 
-def addcollect(request, foodid: int = None):
-    if request.method == "POST":
-        user_id =request.session.get("user_id")
-        user = User.objects.get(id=user_id)
-        foodobj = Foods.objects.get(id=foodid)
-        if not Collect.objects.filter(user_id=user_id, food=foodobj).exists():
-            collect_item = Collect(user=user, food=foodobj)
-            collect_item.save()
-        return JsonResponse({'status':'success','message':'收藏成功'})
-    return JsonResponse({'status':'error','message':'收藏失败'},status=400)
 
-def removecollect(request, foodid: int = None):
-    if request.method == "POST":
-        user_id =request.session.get("user_id")
-        user = User.objects.get(id=user_id)
-        foodobj = Foods.objects.get(id=foodid)
-        if Collect.objects.filter(user_id=user_id, food=foodobj).exists():
-            collect_item = Collect.objects.filter(user_id=user_id, food=foodobj).first()
-            collect_item.delete()
-        return JsonResponse({'status':'success','message':'取消收藏成功'})
-    return JsonResponse({'status':'error','message':'取消收藏失败'},status=400)
+def _session_user(request) -> User | None:
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return None
+    return User.objects.filter(id=user_id).first()
 
-def comment(request, foodid: int = None):
-    if request.method == "POST":
-        uid =request.session.get("user_id")
-        user = User.objects.get(id=uid)
-        realname = user.username
-        comment_text = request.POST.get("comment",'')
-        
-        commentdata={
-            "uid":uid,
-            "fid":foodid,
-            "realname":realname,
-            "content":comment_text,
-            "ctime":datetime.now(),
-        }
-        commentobj = Comment(**commentdata)
-        commentobj.save()
-        
-        response_data = {
-            "status":"success",
-            "realname":realname,
-            "comment":comment_text,
-            "ctime":commentobj.ctime.strftime("%Y-%m-%d %H:%M:%S"),
-        }
-        return JsonResponse(response_data)
-    return JsonResponse({'status':'error'},status=400)
+
+@require_POST
+def addcollect(request, foodid: int):
+    user = _session_user(request)
+    if user is None:
+        return JsonResponse({'status': 'error', 'message': '请先登录'}, status=401)
+
+    foodobj = get_object_or_404(Foods, id=foodid)
+    Collect.objects.get_or_create(user=user, food=foodobj)
+    return JsonResponse({'status': 'success', 'message': '收藏成功'})
+
+
+@require_POST
+def removecollect(request, foodid: int):
+    user = _session_user(request)
+    if user is None:
+        return JsonResponse({'status': 'error', 'message': '请先登录'}, status=401)
+
+    foodobj = get_object_or_404(Foods, id=foodid)
+    Collect.objects.filter(user=user, food=foodobj).delete()
+    return JsonResponse({'status': 'success', 'message': '取消收藏成功'})
+
+
+@require_POST
+def comment(request, foodid: int):
+    user = _session_user(request)
+    if user is None:
+        return JsonResponse({'status': 'error', 'message': '请先登录'}, status=401)
+
+    comment_text = request.POST.get("comment", "").strip()
+    if not comment_text:
+        return JsonResponse({'status': 'error', 'message': '评论内容不能为空'}, status=400)
+
+    get_object_or_404(Foods, id=foodid)
+    commentobj = Comment.objects.create(
+        uid=user.id,
+        fid=foodid,
+        realname=user.username,
+        content=comment_text,
+        ctime=timezone.now(),
+    )
+
+    response_data = {
+        "status": "success",
+        "realname": user.username,
+        "comment": comment_text,
+        "ctime": timezone.localtime(commentobj.ctime).strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    return JsonResponse(response_data)

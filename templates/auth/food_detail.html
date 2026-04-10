@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends "layout.html" %}
 {% block content %}
     <div class="page-content">
         <!-- ===== 页面标题区域 ===== -->
@@ -51,7 +51,7 @@
                                             <div class="product-social-links mb-3">
                                                 <div class="product-addto-links-text d-flex align-items-center">
                                                     <span class="font-weight-bold text-dark">菜系</span>
-                                                    <span class="ml-2 text-secondary">{{ foodinfo.type }}</span>
+                                                    <span class="ml-2 text-secondary">{{ foodinfo.foodtype }}</span>
                                                 </div>
                                             </div>
                                             <div class="product-info-price mb-3">
@@ -84,11 +84,7 @@
                                                 <div class="tab-content" xoric-tabs-content p-3 border rounded>
                                                     <div class="tab-pane active show" id="Deatails">
                                                         <div class="valu mb-4">
-                                                            <p class="text-muted">
-                                                                {% autoescape off %}
-                                                                    {{ foodinfo.fooddetail }}
-                                                                {% endautoescape %}
-                                                            </p>
+                                                            <p class="text-muted">{{ foodinfo.recommend|default:"暂无详情" }}</p>
                                                         </div>
                                                         <!-- 推荐美食详情 -->
                                                         <div class="product-social-links bg-light p-3 rounded border">
@@ -158,7 +154,7 @@
                 </div>
             </div>
         </div>
-<script>
+        <script>
     document.getElementById('addcollect').addEventListener('click',function(){
         var collectButton = this;
         var isCollect = collectButton.getAttribute('data-is-collect') === 'true';
@@ -196,8 +192,6 @@
             alert('网络请求失败，请稍后重试');
         });
     });
-</script>
-<script>
-
-</script>
-{% endblock %}
+        </script>
+        <script></script>
+    {% endblock %}
