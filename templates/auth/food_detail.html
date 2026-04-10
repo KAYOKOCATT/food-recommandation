@@ -12,6 +12,9 @@
                             <li class="breadcrumb-item">
                                 <a href="/api/v1/user_index">主页</a>
                             </li>
+                            <li class="breadcrumb-item active">
+                                <a href="/api/v1/food_list">美食列表</a>
+                            </li>
                             <li class="breadcrumb-item active">美食详情</li>
                         </ol>
                     </div>
@@ -232,5 +235,57 @@
         });
     });
         </script>
-        <script></script>
+        <script>
+            document.getElementById("commentForm").addEventListener('submit',function(event){
+                event.preventDefault();
+
+                const commentText =document.getElementById("commentText").value;
+                const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+                const url = this.action;
+
+                fetch(url,{
+                    method:'POST',
+                    headers:{
+                        "X-CSRFToken":csrfToken
+                    },
+                    body: new URLSearchParams({
+                        "comment":commentText
+                    })
+                })
+                .then(response=>{
+                    console.log('响应状态:', response.status);
+                    return response.json();
+                })
+                .then(data=>{
+                    console.log('返回数据:', data);
+                    if(data.status === 'success'){
+                        addCommentToList(data.realname,data.comment,data.ctime);
+                        document.getElementById("commentText").value = '';
+                    }else {
+                        alert('评论提交失败，请稍后重试');
+                    }
+                })
+                .catch(error => console.error('请求失败:', error));
+            });
+
+            //抽象出添加评论的函数
+            function addCommentToList(username,comment,time){
+                const commentList = document.querySelector('.valu-2 ul');
+
+                //创建评论项的模板字符串
+                const commentHTML = `
+                    <li class="mb-3 p-3 border rounded bg-white">
+                        <div class="review-right">
+                            <div class="review-details mb-2">
+                                <span class="font-weight-bold text-dark">${ username }</span>
+                                <span class="ml-2 text-secondary">${ comment }</span>
+                            </div>
+                            <div class="review-time small text-muted">${ time }</div>
+                        </div>
+                    </li>
+                `;
+                //将评论项添加到评论列表中
+                commentList.insertAdjacentHTML('beforeEnd',commentHTML);
+            }
+        </script>
     {% endblock %}
