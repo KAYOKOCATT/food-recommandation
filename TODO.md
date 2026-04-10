@@ -109,6 +109,10 @@ README 描述了一个综合系统，包含：
 
 ---
 
-### 💡 **建议**
+### 具体下一步（明天就能开始）
 
-该项目拥有**坚实的基础**，但处于非常早期的阶段。项目的核心目标——推荐引擎——尚未开始。在专注于 UI 美化之前，应优先实施协同过滤算法和用户 - 物品交互追踪。
+1. **今晚**：写 `channels/statistical.py`，输出按stars和review_count排序的Top 100商家（立即有东西展示）
+2. **明天**：用你学的TF-IDF，处理`business.categories`，实现`channels/content_based.py`的`get_similar_by_tags(item_id)`
+3. **本周末**：基于review数据构建Item-Item共现矩阵，实现`channels/item_cf.py`（比ALS简单，先不用矩阵分解）
+
+**避免踩坑**：ALS（隐语义）虽然你学了原理，但在Yelp数据集上，ItemCF（基于共现）往往效果更好且可解释（"看了火锅的人还看了串串"）。建议ItemCF先上线，ALS作为第二阶段优化。
