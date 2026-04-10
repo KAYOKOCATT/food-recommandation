@@ -1,4 +1,4 @@
-{% extends "base_modern.html" %}
+{% extends "base_auth.html" %}
 {% load static %}
 {% block title %}
   User Login - Food Recommendation System
@@ -6,7 +6,7 @@
 {% block body_class %}
   bg-primary bg-pattern
 {% endblock body_class %}
-{% block modern_content %}
+{% block content %}
   {# Home Button #}
   <div class="home-btn d-none d-sm-block">
     <a href=""><i class="mdi mdi-home-variant h2 text-white"></i></a>
@@ -69,4 +69,4 @@
       </div>
     </div>
   </div>
-{% endblock modern_content %}
+{% endblock content %}
