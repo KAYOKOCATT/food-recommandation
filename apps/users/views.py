@@ -24,13 +24,17 @@
 """
 import json
 import re
+import os
 from json import JSONDecodeError
+from tkinter import N
 from typing import Optional, Union
 
 from django import forms
 from django.contrib.auth.hashers import check_password
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
+from django.contrib.auth.hashers import check_password, make_password
+from config import settings
 
 from apps.users.models import User
 
@@ -203,3 +207,59 @@ def user_index(request):
 def logout(request):
     request.session.flush()
     return redirect('login')
+
+def user_view(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return HttpResponse('请先登录',status=401)
+    
+    user = get_object_or_404(User,id=user_id)
+    
+    if request.method == 'POST':
+        user.username = request.POST.get('username')
+        user.email = request.POST.get('email')
+        user.phone = request.POST.get('phone')
+        user.info = request.POST.get('info')
+        
+        avatar = request.FILES.get('avatar')
+        if avatar:
+            static_path = os.path.join(settings.BASE_DIR, 'static', 'image')
+            os.makedirs(static_path,exist_ok=True)
+            filename =os.path.join(static_path,avatar.name)
+            
+            with open(filename, 'wb+') as destination:
+                for chunk in avatar.chunks():
+                    destination.write(chunk)
+            
+            user.face ='/image/' + avatar.name
+        user.save()
+        return redirect('user_view')
+    
+    else:
+        from_page =request.GET.get('fp',1)
+        return render(request, 'auth/user_view.html',{'user':user,'from_page':from_page})
+
+def change_password(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return HttpResponse('请先登录',status=401)
+    
+    user = get_object_or_404(User,id=user_id)
+    error_message = None
+    success_message = None
+    
+    if request.method == 'POST':
+        current_password = request.POST.get('current_password')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        if not check_password(current_password, user.password):
+            error_message = '当前密码错误'
+        elif new_password != confirm_password:
+            error_message = '新密码与确认密码不一致'
+        else:
+            user.password = make_password(new_password)
+            user.save()
+            success_message = '密码修改成功'
+            return render(request,"auth/change_password.html",{'user':user,'success_message':success_message})
+    return render(request,"auth/change_password.html",{'user':user,'error_message':error_message})

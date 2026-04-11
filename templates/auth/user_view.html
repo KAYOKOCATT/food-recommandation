@@ -1,0 +1,130 @@
+{% extends 'layout.html' %}
+{% load static %}
+{% block content %}
+
+    <div class="page-content">
+        <!-- 标题 -->
+        <div class="page-title-box">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="page-title mb-1">用户详情</h4>
+                        <ol class="breadcrumb m-0">
+                            <li class="breadcrumb-item"><a href="/api/v1/user_index">首页</a></li>
+                            <li class="breadcrumb-item active">用户详情</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 内容 -->
+        <div class="page-content-wrapper">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <section class="content" id="showcontent">
+                            <div class="row justify-content-center">
+                                <div class="col-md-6">
+                                    <div class="box box-primary">
+                                        <div class="box-header text-center">
+                                            <h3 class="box-title">用户详情</h3>
+                                        </div>
+                                        <div class="box-body" table-responsive no-padding>
+                                            <form method="post" enctype="multipart/form-data">
+                                                {% csrf_token %}
+                                                <div class="form-group">
+                                                    <label for="id">用户ID</label>
+                                                    <input type="text" class="form-control" id="id" name="id" 
+                                                    value="{{ user.id }}" readonly>
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label for="username">用户名</label>
+                                                    <input type="text" class="form-control" id="username" name="username" 
+                                                    value="{{ user.username }}">
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label for="email">邮箱</label>
+                                                    <input type="text" class="form-control" id="email" name="email" 
+                                                    value="{{ user.email }}">
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label for="phone">手机号</label>
+                                                    <input type="text" class="form-control" id="phone" name="phone" 
+                                                    value="{{ user.phone }}">
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label for="avatar">头像</label>
+                                                    <div>
+                                                        <img id="preview" src='{% static user.face %}' alt="预览"
+                                                        style="width: 150px; height: 150px;">
+                                                    </div>
+                                                    <!-- 隐藏文件输入框 -->
+                                                    <input type="file" id="avatar" name="avatar" accept="image/*"
+                                                    style="display: none;"> 
+                                                    
+                                                    <button type="button" class="btn btn-primary" id="upload-btn"
+                                                    style="margin-top: 10px; margin-right: 5px;">选择文件
+                                                    </button>
+                                                    <button type="button"
+                                                    class="btn btn-primary waves-effect waves-light" 
+                                                    style="margin-top: 10px; margin-right: 5px; display: none;"
+                                                    id="remove-btn">删除头像
+                                                    </button>
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label for="info">个人介绍</label>
+                                                    <textarea class="form-control" id="info" 
+                                                    name="info" rows="4">{{ user.info }}</textarea>
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <button type="submit" class="btn btn-primary">更新</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            $("#g-5").addClass("active");
+            $("#g-5-2").addClass("active");
+
+            $("#upload-btn").on("click", function() {
+                $("#avatar").click();
+            });
+        
+
+            $("#avatar").on("change", function(event) {
+                const file = event.target.files[0];
+                if (file){
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById("preview").src = e.target.result;
+                        $("#remove-btn").show();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+        // 当点击移除按钮时，清空头像预览和文件输入框的值
+            $("#remove-btn").on("click", function() {
+                $("#preview").attr("src", "{% static user.face %}");
+                $("#avatar").val("");
+                $(this).hide();
+            });
+        });
+    </script>
+{% endblock %}

@@ -34,8 +34,8 @@
                                         <div class="flexslider">
                                             <ul class="gallery-overlay">
                                                 <img src="{{ foodinfo.imgurl }}"
-                                                     alt="food"
-                                                     class="gallery-demo-img img-fluid mx-auto" />
+                                                    alt="food"
+                                                    class="gallery-demo-img img-fluid mx-auto" />
                                             </ul>
                                         </div>
                                     </div>
@@ -65,9 +65,9 @@
                                             <div class="product-add-form mb-3">
                                                 <form action="" class="d-flex align-items-center justify-content-start">
                                                     <a id="addcollect"
-                                                       href="javascript:void(0);"
-                                                       class="btn {% if is_collect %}btn-danger{% else %}btn-secondary{% endif %}"
-                                                       data-is-collect="{% if is_collect %}true{% else %}false{% endif %}">
+                                                    href="javascript:void(0);"
+                                                    class="btn {% if is_collect %}btn-danger{% else %}btn-secondary{% endif %}"
+                                                    data-is-collect="{% if is_collect %}true{% else %}false{% endif %}">
                                                         <i class="fas fa-heart"></i>
                                                     </a>
                                                 </form>
@@ -77,8 +77,8 @@
                                                     role="tablist">
                                                     <li class="nav-item">
                                                         <a href="#Deatails"
-                                                           class="nav-link active font-weight-bold"
-                                                           data-toggle="tab">美食详情</a>
+                                                        class="nav-link active font-weight-bold"
+                                                        data-toggle="tab">美食详情</a>
                                                     </li>
                                                     <li class="nav-item">
                                                         <a href="#Reviews" class="nav-link font-weight-bold" data-toggle="tab">美食评论</a>
@@ -118,18 +118,18 @@
                                                             </div>
                                                             <!-- 发表评论表单 -->
                                                             <form id="commentForm"
-                                                                  action="{% url 'comment' foodinfo.id %}"
-                                                                  method="post"
-                                                                  class="pt-3">
+                                                                action="{% url 'comment' foodinfo.id %}"
+                                                                method="post"
+                                                                class="pt-3">
                                                                 {% csrf_token %}
                                                                 <div class="review-form d-flex align-items-center">
                                                                     <div class="review-form flex-grow-1 mb-0 mr-3">
                                                                         <textarea name="comment"
-                                                                                  id="commentText"
-                                                                                  class="form-control border"
-                                                                                  rows="1"
-                                                                                  placeholder="请输入评论内容"
-                                                                                  required></textarea>
+                                                                                id="commentText"
+                                                                                class="form-control border"
+                                                                                rows="1"
+                                                                                placeholder="请输入评论内容"
+                                                                                required></textarea>
                                                                     </div>
                                                                     <!-- 发表评论按钮 -->
                                                                     <div class="review-form-button">
@@ -163,13 +163,13 @@
                                         {% for item in similar_foods %}
                                             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-3">
                                                 <a href="{% url 'food_detail' item.food.id %}"
-                                                   class="text-decoration-none text-dark">
+                                                class="text-decoration-none text-dark">
                                                     <div class="border rounded h-100 overflow-hidden">
                                                         <div style="width: 100%; aspect-ratio: 1 / 1; overflow: hidden;">
                                                             <img src="{{ item.food.imgurl }}"
-                                                                 alt="{{ item.food.foodname }}"
-                                                                 class="img-fluid"
-                                                                 style="width: 100%; height: 100%; object-fit: cover;">
+                                                                alt="{{ item.food.foodname }}"
+                                                                class="img-fluid"
+                                                                style="width: 100%; height: 100%; object-fit: cover;">
                                                         </div>
                                                         <div class="p-2">
                                                             <h6 class="mb-1 text-truncate">{{ item.food.foodname }}</h6>
