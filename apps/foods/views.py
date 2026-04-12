@@ -10,7 +10,7 @@ from django.views.decorators.http import require_POST
 
 from apps.users.models import User
 from .models import Collect, Comment, Foods
-from .services import similar_foods_for_detail, recommend_foods_by_usercf
+from .services import similar_foods_for_detail, recommend_foods_by_usercf, popular_foods, most_favorited_foods
 
 
 def food_list(request) -> Any:
@@ -155,3 +155,22 @@ def usercf_recommendations(request):
         "user_id": user_id,
     }
     return render(request, "auth/usercf_recommendations.html", context)
+
+
+def statistics_recommendations(request):
+    """
+    统计推荐页面（首页默认推荐）
+    为冷启动用户展示基于统计的热门推荐内容
+    无需登录即可访问
+    """
+    # 获取热门精选（综合排序）
+    popular = popular_foods(limit=12)
+
+    # 获取人气收藏（按收藏数排序）
+    most_favorited = most_favorited_foods(limit=12)
+
+    context = {
+        "popular_foods": popular,
+        "most_favorited_foods": most_favorited,
+    }
+    return render(request, "auth/statistics_recommendations.html", context)

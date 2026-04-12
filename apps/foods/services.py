@@ -29,6 +29,16 @@ def popular_foods(limit: int = 20) -> QuerySet[Foods]:
     )
 
 
+def most_favorited_foods(limit: int = 12) -> QuerySet[Foods]:
+    """Return foods ordered by collect_count (most favorited first)."""
+    safe_limit = max(limit, 1)
+    return (
+        Foods.objects.order_by("-collect_count", "foodtype", "foodname")[
+            :safe_limit
+        ]
+    )
+
+
 def recommend_foods_by_itemcf(
     user_id: int,
     similarity_file: str | Path,
