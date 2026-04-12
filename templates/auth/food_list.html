@@ -20,7 +20,6 @@
       </div>
     </div>
     <!-- 页面标题区域结束 -->
-
     <!-- ===== 页面主要内容区域 ===== -->
     <div class="page-content-wrapper">
       <div class="container-fluid">
@@ -30,7 +29,8 @@
               <div class="card-body">
                 <!-- ===== 分类筛选器 ===== -->
                 <div class="row">
-                  <ul class="col list-inline gallery-categories-filter text-center" id="filter">
+                  <ul class="col list-inline gallery-categories-filter text-center"
+                      id="filter">
                     <!-- 全部分类按钮 -->
                     <li class="list-inline-item">
                       <a class="categories {% if selected == 'all' %}active{% endif %}"
@@ -48,100 +48,104 @@
                   </ul>
                 </div>
                 <!-- 分类筛选器结束 -->
-
                 <!-- ===== 美食画廊区域 ===== -->
-                <div class="row container-grid projects-wrapper ">
+                <div class="row container-grid projects-wrapper">
                   <!-- 循环渲染美食卡片 -->
                   {% for item in page_obj %}
                     <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                        <!-- 单个美食卡片 -->
-                        <div class="gallery-box mt-4"
-                           style="position: relative;width: 100%;aspect-ratio: 1 / 1;border-radius: 8px;overflow: hidden;">
-                            <!-- 点击链接 -->
-                            <a class="gallery-popup" href="{% url 'food_detail' item.id %}"
-                               onclick="window.location.href = this.href;return false;" title="">
-                                <!-- 美食图片 -->
-                                <img class="gallery-demo-img img-fluid mx-auto" 
-                                     " src="{{ item.imgurl }}" alt="1"
-                                     style="position: absolute;top: 0;left: 0;object-fit: cover;">
-                                <!-- 悬停时显示的遮罩层 -->
-                                <div class="gallery-overlay">
-                                    <div class="overlay-content">
-                                        <h5 class="overlay-title">{{ item.foodname }}</h5>
-                                        <p class="text-uppercase mb-0">{{ item.foodtype }}</p>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
+                      <!-- 单个美食卡片: 修复了图片标签和宽高样式 -->
+                      <div class="gallery-box mt-4"
+                           style="position: relative;
+                                  width: 100%;
+                                  aspect-ratio: 1 / 1;
+                                  border-radius: 8px;
+                                  overflow: hidden">
+                        <a class="gallery-popup"
+                           href="{% url 'food_detail' item.id %}"
+                           onclick="window.location.href = this.href;return false;"
+                           title="{{ item.foodname }}">
+                          <!-- 美食图片 -->
+                          <img class="gallery-demo-img img-fluid mx-auto"
+                               src="{{ item.imgurl }}"
+                               alt="{{ item.foodname }}"
+                               style="position: absolute;
+                                      top: 0;
+                                      left: 0;
+                                      width: 100%;
+                                      height: 100%;
+                                      object-fit: cover">
+                          <!-- 悬停时显示的遮罩层 -->
+                          <div class="gallery-overlay">
+                            <div class="overlay-content">
+                              <h5 class="overlay-title">{{ item.foodname }}</h5>
+                              <p class="text-uppercase mb-0">{{ item.foodtype }}</p>
+                            </div>
+                          </div>
+                        </a>
+                      </div>
                     </div>
                   {% endfor %}
                 </div>
                 <!-- 美食画廊区域结束 -->
-
                 <!-- ===== 分页导航 ===== -->
                 <div class="col-6" style="margin-top: 20px;">
-                    <div class="pagination pagination-rounded mb-0">
-                        <ul class="pagination pagination-rounded mb-0">
-                            <!-- 跳转到第一页按钮 -->
-                            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
-                                <a href="?category={{ selected_category }}&page=1" aria-label="First"
-                                   class="page-link">First</a>
-                            </li>
-
-                            <!-- 上一页按钮 -->
-                            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
-                                {% if page_obj.has_previous %}
-                                    <a href="?category={{ selected_category }}&page={{ page_obj.previous_page_number }}"
-                                       aria-label="Previous" class="page-link">
-                                       <i class="mdi mdi-chevron-left"></i>
-                                    </a>
-                                {% endif %}
-                            </li>
-
-                            <!-- 页码循环 -->
-                            {% for num in page_obj.paginator.page_range %}
-                                <!-- 当前页高亮显示 -->
-                                {% if num == page_obj.number %}
-                                    <li class="page-item active">
-                                        <href="#" class="page-link">{{ num }}</href>
-                                    </li>
-                                <!-- 显示当前页前后2页 -->
-                                {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
-                                    <li class="page-item">
-                                        <a href="?category={{ selected_category }}&page={{ num }}"
-                                           class="page-link">{{ num }}</a>
-                                    </li>
-                                {% endif %}
-                            {% endfor %}
-
-                            <!-- 下一页按钮 -->
-                            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
-                                {% if page_obj.has_next %}
-                                    <a href="?category={{ selected_category }}&page={{ page_obj.next_page_number }}"
-                                       aria-label="Next" class="page-link">
-                                       <i class="mdi mdi-chevron-right"></i>
-                                    </a>
-                                {% endif %}
-                            </li>
-                            <!-- 跳转到最后一页按钮 -->
-                            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
-                                <a href="?category={{ selected_category }}&page={{ page_obj.paginator.num_pages }}"
-                                   aria-label="Last" class="page-link">Last</a>
-                            </li>
-                        </ul>
-                    </div>
+                  <div class="pagination pagination-rounded mb-0">
+                    <ul class="pagination pagination-rounded mb-0">
+                      <!-- 跳转到第一页按钮 -->
+                      <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                        <a href="?category={{ selected_category }}&page=1"
+                           aria-label="First"
+                           class="page-link">First</a>
+                      </li>
+                      <!-- 上一页按钮 -->
+                      <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                        {% if page_obj.has_previous %}
+                          <a href="?category={{ selected_category }}&page={{ page_obj.previous_page_number }}"
+                             aria-label="Previous"
+                             class="page-link">
+                            <i class="mdi mdi-chevron-left"></i>
+                          </a>
+                        {% endif %}
+                      </li>
+                      <!-- 页码循环 -->
+                      {% for num in page_obj.paginator.page_range %}
+                        <!-- 修复了此处错误的 <href> 标签 -->
+                        {% if num == page_obj.number %}
+                          <li class="page-item active">
+                            <a href="#" onclick="return false;" class="page-link">{{ num }}</a>
+                          </li>
+                        {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                          <li class="page-item">
+                            <a href="?category={{ selected_category }}&page={{ num }}"
+                               class="page-link">{{ num }}</a>
+                          </li>
+                        {% endif %}
+                      {% endfor %}
+                      <!-- 下一页按钮 -->
+                      <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                        {% if page_obj.has_next %}
+                          <a href="?category={{ selected_category }}&page={{ page_obj.next_page_number }}"
+                             aria-label="Next"
+                             class="page-link">
+                            <i class="mdi mdi-chevron-right"></i>
+                          </a>
+                        {% endif %}
+                      </li>
+                      <!-- 跳转到最后一页按钮 -->
+                      <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                        <a href="?category={{ selected_category }}&page={{ page_obj.paginator.num_pages }}"
+                           aria-label="Last"
+                           class="page-link">Last</a>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
                 <!-- 分页导航结束 -->
-
               </div>
             </div>
           </div>
         </div>
       </div>
-      <!-- end row -->
     </div>
-    <!-- end container-fluid -->
   </div>
-  <!-- end page-content-wrapper -->
-</div>
 {% endblock %}

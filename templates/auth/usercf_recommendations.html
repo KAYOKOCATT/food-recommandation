@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="page-content">
+    <!-- ===== 页面标题区域 ===== -->
+    <div class="page-title-box">
+      <div class="container-fluid">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h4 class="page-title mb-1">为您推荐</h4>
+            <ol class="breadcrumb m-0">
+              <li class="breadcrumb-item">
+                <a href="/api/v1/user_index">主页</a>
+              </li>
+              <li class="breadcrumb-item active">为您推荐</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 页面标题区域结束 -->
+    <div class="page-content-wrapper">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-xl-12">
+            <div class="card">
+              <div class="card-body">
+                <!-- 标题区 -->
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                  <div>
+                    <h4 class="card-title mb-1">基于您的收藏历史，为您推荐以下美食</h4>
+                    <p class="text-muted small mb-0">与你有相似口味的用户也喜欢这些菜品</p>
+                  </div>
+                </div>
+                <!-- 推荐列表 -->
+                <!-- 增加了 container-grid projects-wrapper 类名保持完全一致性 -->
+                <div class="row container-grid projects-wrapper">
+                  {% for item in recommendations %}
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                      <!-- 将 div.gallery-box 提至最外层，包裹 a 标签，保证遮罩效果触发 -->
+                      <div class="gallery-box mt-4"
+                           style="position: relative;
+                                  width: 100%;
+                                  aspect-ratio: 1 / 1;
+                                  border-radius: 8px;
+                                  overflow: hidden">
+                        <a class="gallery-popup"
+                           href="{% url 'food_detail' item.food.id %}"
+                           onclick="window.location.href = this.href;return false;"
+                           title="{{ item.food.foodname }}">
+                          <img class="gallery-demo-img img-fluid mx-auto"
+                               src="{{ item.food.imgurl }}"
+                               alt="{{ item.food.foodname }}"
+                               style="position: absolute;
+                                      top: 0;
+                                      left: 0;
+                                      width: 100%;
+                                      height: 100%;
+                                      object-fit: cover">
+                          <!-- 悬停遮罩层 -->
+                          <div class="gallery-overlay">
+                            <div class="overlay-content">
+                              <h5 class="overlay-title">{{ item.food.foodname }}</h5>
+                              <p class="text-uppercase mb-0">{{ item.food.foodtype }}</p>
+                              <!-- 推荐额外信息，适当缩小字号融入 UI -->
+                              <p class="mb-0 mt-2"
+                                 style="font-size: 13px;
+                                        color: rgba(255,255,255,0.8)">推荐分: {{ item.score|floatformat:2 }}</p>
+                              <p class="mb-0 font-weight-bold">￥{{ item.food.price|floatformat:2 }}</p>
+                            </div>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+                <!-- 推荐列表结束 -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

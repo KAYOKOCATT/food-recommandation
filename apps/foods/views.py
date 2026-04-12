@@ -4,13 +4,13 @@ from django.conf import settings
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import F
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.users.models import User
 from .models import Collect, Comment, Foods
-from .services import similar_foods_for_detail
+from .services import similar_foods_for_detail, recommend_foods_by_usercf
 
 
 def food_list(request) -> Any:
@@ -128,3 +128,30 @@ def comment(request, foodid: int):
         "ctime": timezone.localtime(commentobj.ctime).strftime("%Y-%m-%d %H:%M:%S"),
     }
     return JsonResponse(response_data)
+
+
+def usercf_recommendations(request):
+    """
+    UserCF个性化推荐页面
+    根据当前登录用户的收藏历史，展示基于相似用户的推荐菜品
+    """
+    user_id = request.session.get("user_id")
+
+    # 未登录用户重定向到登录页
+    if not user_id:
+        return redirect("/api/v1/login")
+
+    recommendation_file = settings.BASE_DIR / "data" / "recommendations" / "food_usercf.json"
+
+    # 获取UserCF推荐结果
+    recommendations = recommend_foods_by_usercf(user_id, recommendation_file, top_k=20)
+
+    # 如果无推荐结果，重定向到首页（首页展示热门推荐）
+    if not recommendations:
+        return redirect("/api/v1/user_index")
+
+    context = {
+        "recommendations": recommendations,
+        "user_id": user_id,
+    }
+    return render(request, "auth/usercf_recommendations.html", context)
