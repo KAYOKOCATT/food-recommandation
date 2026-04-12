@@ -5,10 +5,13 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
+from django.db import connection
 from django.test import Client, TestCase
+from django.test.utils import CaptureQueriesContext
 
 from apps.recommendations.models import YelpBusiness, YelpReview
 from apps.recommendations.services.yelp_service import YelpService
+from apps.users.demo_candidates import YelpDemoCandidate
 from apps.users.models import User
 
 
@@ -65,11 +68,12 @@ class AuthFlowTests(TestCase):
         self.assertFalse(session["is_demo_login"])
 
     def test_yelp_demo_login_sets_demo_session(self) -> None:
-        response = self.client.post(
-            "/api/v1/users/login/yelp-demo/",
-            data=json.dumps({"user_id": self.yelp_user.id}),
-            content_type="application/json",
-        )
+        with patch("apps.users.views.candidate_user_ids", return_value={self.yelp_user.id}):
+            response = self.client.post(
+                "/api/v1/users/login/yelp-demo/",
+                data=json.dumps({"user_id": self.yelp_user.id}),
+                content_type="application/json",
+            )
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
@@ -82,14 +86,35 @@ class AuthFlowTests(TestCase):
         self.assertTrue(session["is_demo_login"])
 
     def test_yelp_demo_login_rejects_non_demo_user(self) -> None:
-        response = self.client.post(
-            "/api/v1/users/login/yelp-demo/",
-            data=json.dumps({"user_id": self.local_user.id}),
-            content_type="application/json",
-        )
+        with patch("apps.users.views.candidate_user_ids", return_value={self.yelp_user.id}):
+            response = self.client.post(
+                "/api/v1/users/login/yelp-demo/",
+                data=json.dumps({"user_id": self.local_user.id}),
+                content_type="application/json",
+            )
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["msg"], "该 Yelp 演示账号不可用")
+
+    def test_login_get_uses_demo_candidate_cache_without_count_aggregation(self) -> None:
+        with patch(
+            "apps.users.views.load_yelp_demo_candidates",
+            return_value=[
+                YelpDemoCandidate(
+                    user_id=self.yelp_user.id,
+                    username=self.yelp_user.username,
+                    display_name=self.yelp_user.username,
+                    review_count=1,
+                    last_review_at=None,
+                )
+            ],
+        ):
+            with CaptureQueriesContext(connection) as queries:
+                response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.yelp_user.username)
+        self.assertFalse(any("COUNT(" in query["sql"] for query in queries.captured_queries))
 
     def test_admin_demo_login_uses_first_user(self) -> None:
         response = self.client.post("/api/v1/users/login/admin-demo/", data="{}", content_type="application/json")

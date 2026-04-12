@@ -30,11 +30,14 @@ from typing import Optional, Union
 
 from django import forms
 from django.contrib.auth.hashers import check_password, make_password
-from django.db.models import Count
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from config import settings
 
+from apps.users.demo_candidates import (
+    candidate_user_ids,
+    load_yelp_demo_candidates,
+)
 from apps.users.models import User
 from apps.users.session_auth import (
     build_identity,
@@ -148,12 +151,11 @@ def login_yelp_demo(request: HttpRequest) -> JsonResponse:
     if not user_id:
         return api_response(code=4002, msg="请选择 Yelp 演示账号", data={}, status=400)
 
-    user = (
-        User.objects.filter(id=user_id, source="yelp")
-        .annotate(review_count=Count("yelp_reviews"))
-        .filter(review_count__gt=0)
-        .first()
-    )
+    user = User.objects.filter(
+        id=user_id,
+        source="yelp",
+        id__in=candidate_user_ids(),
+    ).first()
     if user is None:
         return api_response(code=4004, msg="该 Yelp 演示账号不可用", data={}, status=400)
 
@@ -348,12 +350,20 @@ def admin_home(request: HttpRequest) -> HttpResponse:
 
 
 def _get_yelp_demo_users() -> list[User]:
-    return list(
-        User.objects.filter(source="yelp")
-        .annotate(review_count=Count("yelp_reviews"))
-        .filter(review_count__gt=0)
-        .order_by("-review_count", "id")[:30]
-    )
+    candidates = load_yelp_demo_candidates(limit=30)
+    if not candidates:
+        return []
+
+    users = User.objects.in_bulk([candidate.user_id for candidate in candidates])
+    hydrated_users: list[User] = []
+    for candidate in candidates:
+        user = users.get(candidate.user_id)
+        if user is None or user.source != "yelp":
+            continue
+        user.review_count = candidate.review_count
+        user.display_name = candidate.display_name
+        hydrated_users.append(user)
+    return hydrated_users
 
 
 def _default_redirect(identity) -> str:

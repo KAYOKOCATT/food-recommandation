@@ -565,3 +565,57 @@ class YelpReviewUserCFCommandTests(TestCase):
             payload = json.loads(output_path.read_text(encoding="utf-8"))
 
         self.assertEqual(payload[str(self.user_1.id)][0]["business_id"], "b4")
+
+    def test_build_yelp_review_usercf_respects_build_set_limits(self) -> None:
+        user_4 = User.objects.create(
+            username="user4",
+            password="secret123",
+            email="user4@example.com",
+            phone="13800138103",
+        )
+        ratings = [
+            (self.user_1, self.business_1, 5),
+            (self.user_1, self.business_2, 4),
+            (self.user_1, self.business_3, 2),
+            (self.user_2, self.business_1, 5),
+            (self.user_2, self.business_2, 4),
+            (self.user_2, self.business_4, 5),
+            (self.user_3, self.business_1, 4),
+            (self.user_3, self.business_2, 5),
+            (self.user_3, self.business_4, 4),
+            (user_4, self.business_1, 5),
+        ]
+        for index, (user, business, stars) in enumerate(ratings, start=1):
+            YelpReview.objects.create(
+                review_id=f"bounded-r{index}",
+                business=business,
+                user=user,
+                stars=stars,
+                source="local",
+            )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "yelp_usercf.json"
+            call_command(
+                "build_yelp_review_usercf",
+                "--output",
+                str(output_path),
+                "--top-k",
+                "3",
+                "--similar-user-k",
+                "2",
+                "--min-user-reviews",
+                "2",
+                "--min-business-reviews",
+                "2",
+                "--min-common-items",
+                "1",
+                "--target-user-count",
+                "3",
+                "--target-review-count",
+                "8",
+            )
+
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertNotIn(str(user_4.id), payload)
