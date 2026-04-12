@@ -8,7 +8,10 @@ from django.core.paginator import Paginator
 from django.db.models import Q, QuerySet
 
 from apps.recommendations.models import YelpBusiness, YelpReview
-from apps.recommendations.services.similarity import similarity_cache
+from apps.recommendations.services.similarity import (
+    RecommendationCandidate,
+    similarity_cache,
+)
 
 
 @dataclass(frozen=True)
@@ -79,12 +82,15 @@ class YelpService:
             return []
 
         source = Path(similarity_file) if similarity_file else cls.SIMILARITY_FILE
-        try:
-            candidates = similarity_cache.get(source).get(str(business_id), [])
-        except (OSError, ValueError):
+        candidates = cls._safe_similarity_candidates(source, business_id)
+        if not candidates:
             return []
 
-        candidate_ids = [candidate.item_id for candidate in candidates if candidate.item_id != business_id]
+        candidate_ids = [
+            candidate.item_id
+            for candidate in candidates
+            if candidate.item_id != business_id
+        ]
         businesses = YelpBusiness.objects.in_bulk(candidate_ids, field_name="business_id")
         recommendations: list[YelpBusinessRecommendation] = []
 
@@ -100,3 +106,13 @@ class YelpService:
             if len(recommendations) >= top_k:
                 break
         return recommendations
+
+    @staticmethod
+    def _safe_similarity_candidates(
+        similarity_file: Path,
+        business_id: str,
+    ) -> list[RecommendationCandidate]:
+        try:
+            return similarity_cache.get(similarity_file).get(str(business_id), [])
+        except (OSError, ValueError):
+            return []

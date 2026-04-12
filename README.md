@@ -59,7 +59,7 @@
                v                                      v
   +--------------------------+       +--------------------------+
   | food_itemcf.json         |       | yelp_content_itemcf.json |
-  | food_usercf.json         |       | yelp_business_profiles   |
+  | food_usercf.json         |       | (offline candidates)     |
   +--------------------------+       +--------------------------+
 ```
 
@@ -121,7 +121,7 @@ Yelp 餐厅列表页 / 餐厅详情页 / 相似餐厅推荐
 ### 图表与推荐支撑链路
 
 ```text
-MySQL 业务表 + Yelp 离线文件
+MySQL 业务表 + Yelp 离线相似度文件
           |
           v
 apps.recommendations.services
@@ -145,6 +145,12 @@ Dashboard / Yelp 页面 / 推荐页面
 3. Yelp 餐厅内容推荐：基于 business/categories/review/tip 等文本和属性做 TF-IDF 特征，离线生成相似餐厅。
 4. Yelp 餐厅协同过滤：基于 review 评分构造 user-business 矩阵，实现 UserCF/ItemCF 这类邻域算法，不把矩阵分解作为 v1 主线。
 5. 实时重排：根据用户最近浏览、收藏或评分，读取离线相似度候选，用简单权重合并和过滤，不在线训练模型。
+
+运行时数据边界：
+
+- `YelpBusiness` / `YelpReview` 负责 Yelp 页面展示、图表统计、地理分布等 ORM 查询。
+- `data/recommendations/yelp_content_itemcf.json` 只负责离线相似餐厅候选。
+- `data/recommendations/yelp_business_profiles.json` 仅保留为离线构建的调试/检查产物，不作为页面或图表运行时依赖。
 
 当前已提供 `apps.recommendations.services.rerank_from_recent_items`，可读取 JSON 格式的离线相似度文件并做最近行为重排。
 
@@ -216,7 +222,10 @@ python manage.py import_yelp_data --mode all --data-dir data/archive_4
 
 - 导入脚本保持独立命令形式，不放进请求链路。
 - 导入按 `business_id`、`review_id` 和稳定生成的 Yelp 用户名做幂等更新。
-- Yelp Web 页面当前采用“数据库详情 + JSON 相似度文件”的混合模式。
+- Yelp Web 页面与图表当前采用“数据库展示 + JSON 相似度候选”的混合模式。
+- 运行时降级策略：
+  - 相似度文件缺失、损坏或结构异常时，相似推荐和网络图返回空结果，不影响页面主内容。
+  - JSON 中候选商家不存在于数据库时，运行时直接跳过该候选。
 
 `Foods.collect_count` 和 `Foods.comment_count` 是展示/排序用统计字段。初始值来自
 `food.csv` 的 `收藏数量`、`评论数量`，后续由本系统收藏、取消收藏、发表评论增量维护。

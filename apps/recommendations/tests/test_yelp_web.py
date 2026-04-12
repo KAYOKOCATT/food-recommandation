@@ -58,6 +58,46 @@ class YelpServiceTests(TestCase):
 
         self.assertEqual(list(queryset.values_list("business_id", flat=True)), ["b1"])
 
+    def test_get_similar_businesses_returns_empty_when_file_is_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            missing_path = Path(temp_dir) / "missing.json"
+            result = YelpService.get_similar_businesses(
+                "b1",
+                top_k=6,
+                similarity_file=missing_path,
+            )
+
+        self.assertEqual(result, [])
+
+    def test_get_similar_businesses_returns_empty_when_json_is_invalid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            similarity_path = Path(temp_dir) / "yelp_content_itemcf.json"
+            similarity_path.write_text("{invalid", encoding="utf-8")
+
+            result = YelpService.get_similar_businesses(
+                "b1",
+                top_k=6,
+                similarity_file=similarity_path,
+            )
+
+        self.assertEqual(result, [])
+
+    def test_get_similar_businesses_skips_candidates_missing_in_database(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            similarity_path = Path(temp_dir) / "yelp_content_itemcf.json"
+            similarity_path.write_text(
+                json.dumps({"b1": [{"business_id": "missing", "score": 0.91}]}),
+                encoding="utf-8",
+            )
+
+            result = YelpService.get_similar_businesses(
+                "b1",
+                top_k=6,
+                similarity_file=similarity_path,
+            )
+
+        self.assertEqual(result, [])
+
 
 class YelpViewTests(TestCase):
     def setUp(self) -> None:
@@ -96,7 +136,9 @@ class YelpViewTests(TestCase):
             similarity_path = Path(temp_dir) / "yelp_content_itemcf.json"
             similarity_path.write_text(json.dumps({"b1": []}), encoding="utf-8")
             with patch.object(YelpService, "SIMILARITY_FILE", similarity_path):
-                response = self.client.get(f"/api/v1/yelp/restaurants/{self.business.business_id}/")
+                response = self.client.get(
+                    f"/api/v1/yelp/restaurants/{self.business.business_id}/"
+                )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Excellent omakase.")
@@ -105,3 +147,41 @@ class YelpViewTests(TestCase):
         response = self.client.get("/api/v1/yelp/restaurants/missing/")
 
         self.assertEqual(response.status_code, 404)
+
+    def test_yelp_business_detail_degrades_when_similarity_file_is_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            missing_path = Path(temp_dir) / "missing.json"
+            with patch.object(YelpService, "SIMILARITY_FILE", missing_path):
+                response = self.client.get(
+                    f"/api/v1/yelp/restaurants/{self.business.business_id}/"
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "当前餐厅暂无相似推荐。")
+
+    def test_yelp_business_detail_degrades_when_similarity_json_is_invalid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            similarity_path = Path(temp_dir) / "yelp_content_itemcf.json"
+            similarity_path.write_text("{invalid", encoding="utf-8")
+            with patch.object(YelpService, "SIMILARITY_FILE", similarity_path):
+                response = self.client.get(
+                    f"/api/v1/yelp/restaurants/{self.business.business_id}/"
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "当前餐厅暂无相似推荐。")
+
+    def test_yelp_business_detail_skips_missing_candidate_businesses(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            similarity_path = Path(temp_dir) / "yelp_content_itemcf.json"
+            similarity_path.write_text(
+                json.dumps({"b1": [{"business_id": "missing", "score": 0.91}]}),
+                encoding="utf-8",
+            )
+            with patch.object(YelpService, "SIMILARITY_FILE", similarity_path):
+                response = self.client.get(
+                    f"/api/v1/yelp/restaurants/{self.business.business_id}/"
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "当前餐厅暂无相似推荐。")

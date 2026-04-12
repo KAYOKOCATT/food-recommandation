@@ -7,22 +7,26 @@
 3. 餐厅地理分布 - Yelp数据地图展示
 4. 相似度网络图 - 推荐关系可视化
 
-依赖：
-    - django.db.models: ORM聚合查询
-    - pathlib: 文件路径处理
-    - json: JSON数据读取
+运行时数据边界：
+    - ORM 负责业务展示与统计查询
+    - JSON 仅负责离线相似度候选
 """
 from __future__ import annotations
 
-import json
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from django.conf import settings
 from django.db.models import Avg, Count, DateField
-from django.db.models.functions import Cast, TruncDate
+from django.db.models.functions import Cast
 
 from apps.foods.models import Collect, Comment, Foods
+from apps.recommendations.models import YelpBusiness
+from apps.recommendations.services.similarity import (
+    RecommendationCandidate,
+    similarity_cache,
+)
 from apps.users.models import User
 
 
@@ -145,7 +149,7 @@ class ChartService:
         """
         获取餐厅地理分布数据
 
-        从Yelp业务数据文件中读取餐厅位置、评分等信息
+        从数据库读取餐厅位置、评分等信息
 
         Args:
             limit: 返回数据条数上限，默认1000
@@ -160,45 +164,39 @@ class ChartService:
                 ...
             ]
         """
-        file_path = cls.DATA_DIR / "yelp_business_profiles.json"
-
-        if not file_path.exists():
-            return []
-
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-
-            profiles = data.get("profiles", [])
-            result = []
-
-            for item in profiles:
-                if item.get("state") not in cls.US_STATES:
-                    continue
-
-                longitude = item.get("longitude")
-                latitude = item.get("latitude")
-                if longitude is None or latitude is None:
-                    continue
-
-                result.append({
-                    "name": item.get("name", ""),
-                    "value": [
-                        longitude,
-                        latitude,
-                        item.get("stars", 0),
-                        item.get("review_count", 0),
-                    ],
-                    "city": item.get("city", ""),
-                    "state": item.get("state", ""),
-                    "categories": item.get("categories", ""),
-                })
-                if len(result) >= limit:
-                    break
-
-            return result
-        except (json.JSONDecodeError, KeyError, IOError):
-            return []
+        queryset = (
+            YelpBusiness.objects.filter(
+                state__in=cls.US_STATES,
+                longitude__isnull=False,
+                latitude__isnull=False,
+            )
+            .order_by("-review_count", "-stars", "name")
+            .values(
+                "name",
+                "longitude",
+                "latitude",
+                "stars",
+                "review_count",
+                "city",
+                "state",
+                "categories",
+            )[: max(limit, 1)]
+        )
+        return [
+            {
+                "name": item["name"],
+                "value": [
+                    item["longitude"],
+                    item["latitude"],
+                    item["stars"],
+                    item["review_count"],
+                ],
+                "city": item["city"],
+                "state": item["state"],
+                "categories": item["categories"],
+            }
+            for item in queryset
+        ]
 
     @classmethod
     def get_similarity_network(  # pylint: disable=too-many-locals,too-many-nested-blocks
@@ -219,108 +217,122 @@ class ChartService:
                 "links": [{"source": "...", "target": "...", "value": 0.8}]
             }
         """
-        similarity_path = cls.DATA_DIR / "yelp_content_itemcf.json"
-        profiles_path = cls.DATA_DIR / "yelp_business_profiles.json"
-
-        if not similarity_path.exists() or not profiles_path.exists():
-            return {"nodes": [], "links": []}
-
-        try:
-            # 加载业务信息（用于获取名称和分类）
-            with open(profiles_path, "r", encoding="utf-8") as f:
-                profiles_data = json.load(f)
-
-            # 构建业务ID到信息的映射
-            business_info: dict[str, dict[str, Any]] = {}
-            for item in profiles_data.get("profiles", []):
-                business_id = item.get("business_id", "")
-                if business_id:
-                    # 从categories中提取主分类
-                    categories = item.get("categories", "")
-                    main_category = categories.split(",")[0].strip() if categories else "Other"
-                    business_info[business_id] = {
-                        "name": item.get("name", business_id),
-                        "category": main_category,
-                        "review_count": item.get("review_count", 0),
-                    }
-
-            # 加载相似度数据
-            with open(similarity_path, "r", encoding="utf-8") as f:
-                similarity_data = json.load(f)
-
-            nodes: list[dict[str, Any]] = []
-            links: list[dict[str, Any]] = []
-            node_ids: set[str] = set()
-            link_ids: set[frozenset[str]] = set()
-            category_colors: dict[str, int] = {}
-            color_index = 0
-
-            # 选择前limit个业务作为节点
-            business_ids = list(similarity_data.keys())[:limit]
-
-            for business_id in business_ids:
-                if business_id not in node_ids:
-                    info = business_info.get(
-                        business_id,
-                        {"name": business_id, "category": "Unknown"},
-                    )
-                    category = info["category"]
-
-                    # 为分类分配颜色索引
-                    if category not in category_colors:
-                        category_colors[category] = color_index
-                        color_index += 1
-
-                    nodes.append({
-                        "id": business_id,
-                        "name": info["name"],
-                        "category": category,
-                        "symbolSize": cls._network_symbol_size(info.get("review_count", 0)),
-                    })
-                    node_ids.add(business_id)
-
-                # 添加相似度边
-                for candidate in similarity_data.get(business_id, []):
-                    target_id = candidate.get("business_id", "")
-                    score = candidate.get("score", 0)
-
-                    if target_id and score >= similarity_threshold:
-                        # 确保目标节点也在列表中
-                        if target_id not in node_ids and len(nodes) < limit:
-                            info = business_info.get(
-                                target_id,
-                                {"name": target_id, "category": "Unknown"},
-                            )
-                            category = info["category"]
-
-                            if category not in category_colors:
-                                category_colors[category] = color_index
-                                color_index += 1
-
-                            nodes.append({
-                                "id": target_id,
-                                "name": info["name"],
-                                "category": category,
-                                "symbolSize": cls._network_symbol_size(info.get("review_count", 0)),
-                            })
-                            node_ids.add(target_id)
-
-                        link_id = frozenset((business_id, target_id))
-                        if target_id in node_ids and link_id not in link_ids:
-                            links.append({
-                                "source": business_id,
-                                "target": target_id,
-                                "value": round(score, 3),
-                            })
-                            link_ids.add(link_id)
-
-            return {
-                "nodes": nodes,
-                "links": links,
-                "categories": [{"name": cat} for cat in category_colors],
-            }
-        except (json.JSONDecodeError, KeyError, IOError):
+        similarity_data = cls._safe_similarity_mapping(
+            cls.DATA_DIR / "yelp_content_itemcf.json"
+        )
+        if not similarity_data:
             return {"nodes": [], "links": [], "categories": []}
+
+        nodes: list[dict[str, Any]] = []
+        links: list[dict[str, Any]] = []
+        node_ids: set[str] = set()
+        link_ids: set[frozenset[str]] = set()
+        category_order: dict[str, int] = {}
+        business_ids = list(similarity_data.keys())[:limit]
+
+        candidate_ids = set(business_ids)
+        for business_id in business_ids:
+            for candidate in similarity_data.get(business_id, []):
+                if candidate.score >= similarity_threshold:
+                    candidate_ids.add(candidate.item_id)
+
+        business_info = cls._get_business_metadata(candidate_ids)
+
+        for business_id in business_ids:
+            source_info = business_info.get(business_id)
+            if source_info is None:
+                continue
+            cls._append_network_node(
+                nodes,
+                node_ids,
+                category_order,
+                business_id,
+                source_info,
+            )
+
+            for candidate in similarity_data.get(business_id, []):
+                if candidate.score < similarity_threshold:
+                    continue
+                target_info = business_info.get(candidate.item_id)
+                if target_info is None:
+                    continue
+                if candidate.item_id not in node_ids and len(nodes) < limit:
+                    cls._append_network_node(
+                        nodes,
+                        node_ids,
+                        category_order,
+                        candidate.item_id,
+                        target_info,
+                    )
+
+                link_id = frozenset((business_id, candidate.item_id))
+                if candidate.item_id in node_ids and link_id not in link_ids:
+                    links.append({
+                        "source": business_id,
+                        "target": candidate.item_id,
+                        "value": round(candidate.score, 3),
+                    })
+                    link_ids.add(link_id)
+
+        return {
+            "nodes": nodes,
+            "links": links,
+            "categories": [{"name": cat} for cat in category_order],
+        }
+
+    @classmethod
+    def _safe_similarity_mapping(
+        cls,
+        path: Path,
+    ) -> dict[str, list[RecommendationCandidate]]:
+        try:
+            return similarity_cache.get(path)
+        except (OSError, ValueError):
+            return {}
+
+    @classmethod
+    def _get_business_metadata(
+        cls,
+        business_ids: set[str],
+    ) -> dict[str, dict[str, Any]]:
+        if not business_ids:
+            return {}
+
+        businesses = YelpBusiness.objects.filter(business_id__in=business_ids).values(
+            "business_id",
+            "name",
+            "categories",
+            "review_count",
+        )
+        metadata: dict[str, dict[str, Any]] = {}
+        for item in businesses:
+            categories = item["categories"] or ""
+            metadata[item["business_id"]] = {
+                "name": item["name"],
+                "category": categories.split(",")[0].strip() if categories else "Other",
+                "review_count": item["review_count"],
+            }
+        return metadata
+
+    @classmethod
+    def _append_network_node(
+        cls,
+        nodes: list[dict[str, Any]],
+        node_ids: set[str],
+        category_order: dict[str, int],
+        business_id: str,
+        info: dict[str, Any],
+    ) -> None:
+        category = info["category"]
+        if category not in category_order:
+            category_order[category] = len(category_order)
+        nodes.append({
+            "id": business_id,
+            "name": info["name"],
+            "category": category,
+            "symbolSize": cls._network_symbol_size(info.get("review_count", 0)),
+        })
+        node_ids.add(business_id)
 
     @staticmethod
     def _network_symbol_size(review_count: Any) -> int:
