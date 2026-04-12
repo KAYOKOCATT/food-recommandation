@@ -1,7 +1,6 @@
 {
   "version": "0.2.0",
   "configurations": [
-  
     {
       "name": "Django Debug Server",
       "type": "debugpy",
@@ -33,6 +32,29 @@
       "request": "launch",
       "program": "${workspaceFolder}/manage.py",
       "args": ["build_food_collect_cf", "--algorithm", "both", "--top-k", "20"],
+      "django": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Django: build_yelp_review_usercf",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": [
+        "build_yelp_review_usercf",
+        "--top-k",
+        "20",
+        "--similar-user-k",
+        "20",
+        "--min-user-reviews",
+        "5",
+        "--min-business-reviews",
+        "10",
+        "--min-common-items",
+        "2",
+        "--output",
+        "data/recommendations/yelp_usercf.json"
+      ],
       "django": true,
       "console": "integratedTerminal"
     }

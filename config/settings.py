@@ -82,7 +82,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.getenv('MYSQL_DATABASE', 'food_recommend'),
         'USER': os.getenv('MYSQL_USER', 'root'),
-        'PASSWORD': os.getenv('MYSQL_PASSWORD', '123456'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD', '5247'),
         'HOST': os.getenv('MYSQL_HOST', 'localhost'),
         'PORT': os.getenv('MYSQL_PORT', '3306'),
     }
@@ -115,7 +115,7 @@ USE_TZ = True
 
 
 STATIC_URL = '/static/'
-STATIC_ROOT: Path = BASE_DIR / 'staticfiles'  # 生产收集目录
+# STATIC_ROOT: Path = BASE_DIR / 'staticfiles'  # 生产收集目录
 STATICFILES_DIRS: list[Path] = [
     BASE_DIR / 'static'
 ]

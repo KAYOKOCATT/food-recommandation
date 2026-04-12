@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="page-content">
+    <div class="page-title-box">
+      <div class="container-fluid">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h4 class="page-title mb-1">Yelp 为你推荐</h4>
+            <ol class="breadcrumb m-0">
+              <li class="breadcrumb-item"><a href="{% url 'user_home' %}">主页</a></li>
+              <li class="breadcrumb-item active">Yelp 推荐</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-content-wrapper">
+      <div class="container-fluid">
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+              <div>
+                <h4 class="card-title mb-1">基于你的 Yelp 历史行为生成</h4>
+                <p class="text-muted small mb-0">优先用于演示 Yelp 导入用户的个性化效果。</p>
+              </div>
+              <a href="{% url 'recommendations:yelp_business_list' %}" class="btn btn-outline-primary btn-sm">返回餐厅列表</a>
+            </div>
+            <div class="row">
+              {% for item in recommendations %}
+                <div class="col-xl-4 col-md-6">
+                  <div class="card border shadow-sm h-100">
+                    <div class="card-body">
+                      <div class="d-flex align-items-start justify-content-between mb-2">
+                        <div>
+                          <h5 class="mb-1">
+                            <a href="{% url 'recommendations:yelp_business_detail' item.business.business_id %}">
+                              {{ item.business.name }}
+                            </a>
+                          </h5>
+                          <p class="text-muted small mb-0">{{ item.business.city }}, {{ item.business.state }}</p>
+                        </div>
+                        <span class="badge badge-soft-success">{{ item.score|floatformat:2 }}</span>
+                      </div>
+                      <p class="text-muted small mb-2">{{ item.business.categories|default:"暂无分类" }}</p>
+                      <div class="small text-muted">
+                        星级 {{ item.business.stars|floatformat:1 }} · 评论数 {{ item.business.review_count }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% empty %}
+                <div class="col-12">
+                  <div class="alert alert-light border mb-0">
+                    当前账号暂无可展示推荐。你仍可返回 Yelp 餐厅列表浏览内容推荐结果。
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

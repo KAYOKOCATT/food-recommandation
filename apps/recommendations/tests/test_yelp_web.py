@@ -350,6 +350,45 @@ class YelpViewTests(TestCase):
         self.assertEqual(local_reviews[1].text, "Actually great")
         self.assertEqual(self.business.aggregated_review_count, 3)
 
+    def test_submit_yelp_review_forbids_yelp_demo_user(self) -> None:
+        demo_user = User.objects.create(
+            username="demo-user",
+            password="!",
+            email="demo@example.com",
+            phone="13800138999",
+            source="yelp",
+        )
+        session = self.client.session
+        session["user_id"] = demo_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "yelp_demo"
+        session["is_demo_login"] = True
+        session.save()
+
+        response = self.client.post(
+            f"/api/v1/yelp/restaurants/{self.business.business_id}/review/",
+            {"stars": "5", "comment": "Love it"},
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_yelp_recommendations_renders_empty_state(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "local"
+        session["is_demo_login"] = False
+        session.save()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            recommendation_path = Path(temp_dir) / "yelp_usercf.json"
+            recommendation_path.write_text("{}", encoding="utf-8")
+            with patch.object(YelpService, "USERCF_FILE", recommendation_path):
+                response = self.client.get("/api/v1/yelp/recommendations/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "当前账号暂无可展示推荐。")
+
 
 class YelpReviewUserCFCommandTests(TestCase):
     def setUp(self) -> None:

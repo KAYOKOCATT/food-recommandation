@@ -3,12 +3,13 @@ from typing import Any
 from django.conf import settings
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import F
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.users.models import User
+from apps.users.session_auth import build_identity, require_identity
 from .models import Collect, Comment, Foods
 from .services import similar_foods_for_detail, recommend_foods_by_usercf, popular_foods, most_favorited_foods
 
@@ -67,17 +68,15 @@ def detail(request, foodid: int):
 
 
 def _session_user(request) -> User | None:
-    user_id = request.session.get("user_id")
-    if not user_id:
-        return None
-    return User.objects.filter(id=user_id).first()
+    return build_identity(request).user
 
 
 @require_POST
 def addcollect(request, foodid: int):
-    user = _session_user(request)
-    if user is None:
-        return JsonResponse({'status': 'error', 'message': '请先登录'}, status=401)
+    identity = require_identity(request, allow_local_user=True, api=True)
+    if isinstance(identity, JsonResponse):
+        return identity
+    user = identity.user
 
     foodobj = get_object_or_404(Foods, id=foodid)
     _, created = Collect.objects.get_or_create(user=user, food=foodobj)
@@ -88,9 +87,10 @@ def addcollect(request, foodid: int):
 
 @require_POST
 def removecollect(request, foodid: int):
-    user = _session_user(request)
-    if user is None:
-        return JsonResponse({'status': 'error', 'message': '请先登录'}, status=401)
+    identity = require_identity(request, allow_local_user=True, api=True)
+    if isinstance(identity, JsonResponse):
+        return identity
+    user = identity.user
 
     foodobj = get_object_or_404(Foods, id=foodid)
     deleted_count, _ = Collect.objects.filter(user=user, food=foodobj).delete()
@@ -103,9 +103,10 @@ def removecollect(request, foodid: int):
 
 @require_POST
 def comment(request, foodid: int):
-    user = _session_user(request)
-    if user is None:
-        return JsonResponse({'status': 'error', 'message': '请先登录'}, status=401)
+    identity = require_identity(request, allow_local_user=True, api=True)
+    if isinstance(identity, JsonResponse):
+        return identity
+    user = identity.user
 
     comment_text = request.POST.get("comment", "").strip()
     if not comment_text:
@@ -135,11 +136,12 @@ def usercf_recommendations(request):
     UserCF个性化推荐页面
     根据当前登录用户的收藏历史，展示基于相似用户的推荐菜品
     """
-    user_id = request.session.get("user_id")
-
-    # 未登录用户重定向到登录页
-    if not user_id:
-        return redirect("/api/v1/login")
+    identity = require_identity(request, allow_local_user=True)
+    if isinstance(identity, JsonResponse):
+        return identity
+    if isinstance(identity, HttpResponse):
+        return identity
+    user_id = identity.user.id
 
     recommendation_file = settings.BASE_DIR / "data" / "recommendations" / "food_usercf.json"
 
@@ -148,7 +150,7 @@ def usercf_recommendations(request):
 
     # 如果无推荐结果，重定向到首页（首页展示热门推荐）
     if not recommendations:
-        return redirect("/api/v1/user_index")
+        return redirect("user_home")
 
     context = {
         "recommendations": recommendations,

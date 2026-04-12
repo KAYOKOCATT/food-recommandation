@@ -30,7 +30,7 @@
                     <h4 class="card-title mb-1">🔥 热门精选</h4>
                     <p class="text-muted small mb-0">大家都在看的人气美食</p>
                   </div>
-                  <a href="/api/v1/food_list" class="btn btn-sm btn-outline-primary">查看更多</a>
+                  <a href="{% url 'food_list' %}" class="btn btn-sm btn-outline-primary">查看更多</a>
                 </div>
                 <div class="row">
                   {% for item in popular_foods %}

@@ -14,6 +14,7 @@ from apps.recommendations.views.yelp import (
     submit_yelp_review,
     yelp_business_detail,
     yelp_business_list,
+    yelp_recommendations,
 )
 
 app_name = "recommendations"
@@ -22,6 +23,7 @@ urlpatterns = [
     # 仪表板页面
     path("charts/dashboard/", ChartView.dashboard, name="dashboard"),
     path("yelp/restaurants/", yelp_business_list, name="yelp_business_list"),
+    path("yelp/recommendations/", yelp_recommendations, name="yelp_recommendations"),
     path(
         "yelp/restaurants/<str:business_id>/",
         yelp_business_detail,

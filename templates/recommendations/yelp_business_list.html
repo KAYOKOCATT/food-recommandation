@@ -7,7 +7,7 @@
           <div class="col-md-8">
             <h4 class="page-title mb-1">Yelp 餐厅推荐</h4>
             <ol class="breadcrumb m-0">
-              <li class="breadcrumb-item"><a href="/api/v1/user_index">主页</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'user_home' %}">主页</a></li>
               <li class="breadcrumb-item active">Yelp 餐厅</li>
             </ol>
           </div>
@@ -45,7 +45,7 @@
                 <div class="col-xl-4 col-md-6">
                   <div class="card border mb-4 shadow-sm h-100">
                     <div class="card-body">
-                      <div class="d-flex align-items-start justify-content-between mb-2">
+                    <div class="d-flex align-items-start justify-content-between mb-2">
                         <div>
                           <h5 class="mb-1">
                             <a href="{% url 'recommendations:yelp_business_detail' business.business_id %}">

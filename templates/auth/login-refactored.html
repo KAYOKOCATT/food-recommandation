@@ -24,43 +24,75 @@
       </div>
       {# Login Form Card #}
       <div class="row justify-content-center">
-        <div class="col-xl-5 col-sm-8">
+        <div class="col-xl-8 col-sm-10">
           <div class="card">
             <div class="card-body p-4">
-              <div class="p-2">
-                <h5 class="mb-5 text-center">登录</h5>
-                {# Alpine.js Form Component #}
-                <div x-data="loginForm()">
-                  <form @submit.prevent="handleSubmit">
-                    {% csrf_token %}
-                    {# Username Field - Using Component #}
-                    {% include "components/form-input.html" with field_name="username" field_type="text" field_placeholder="用户名" required="True" %}
-                    {# Password Field - Using Component #}
-                    {% include "components/form-input.html" with field_name="password" field_type="password" field_placeholder="密码" required="True" %}
-                    {# Remember Me & Forgot Password #}
-                    <div class="row">
-                      <div class="col-md-6">
-                        {% include "components/form-checkbox.html" with field_name="remember" field_label="记住我" field_id="customControlInline" %}
-                      </div>
-                      <div class="col-md-6">
-                        <div class="text-md-right mt-3 mt-md-0">
-                          <a href="#" class="text-muted">
-                            忘记密码？请联系管理员
-                          </a>
+              <div class="p-2" x-data="loginForm()">
+                <h5 class="mb-4 text-center">登录入口</h5>
+                <div class="row">
+                  <div class="col-lg-6 border-right">
+                    <h6 class="mb-3">本地账号登录</h6>
+                    <form @submit.prevent="handleSubmit">
+                      {% csrf_token %}
+                      {% include "components/form-input.html" with field_name="username" field_type="text" field_placeholder="用户名" required="True" %}
+                      {% include "components/form-input.html" with field_name="password" field_type="password" field_placeholder="密码" required="True" %}
+                      <div class="row">
+                        <div class="col-md-6">
+                          {% include "components/form-checkbox.html" with field_name="remember" field_label="记住我" field_id="customControlInline" %}
+                        </div>
+                        <div class="col-md-6">
+                          <div class="text-md-right mt-3 mt-md-0">
+                            <a href="#" class="text-muted">
+                              忘记密码？请联系管理员
+                            </a>
+                          </div>
                         </div>
                       </div>
+                      <div class="mt-4">
+                        {% include "components/submit-button.html" with button_text="登录" button_loading_text="登录中..." button_class="btn-success" %}
+                      </div>
+                      <div class="mt-4 text-center">
+                        <a href="{% url 'register' %}" class="text-muted">
+                          <i class="mdi mdi-account-circle mr-1"></i>创建新账户
+                        </a>
+                      </div>
+                    </form>
+                  </div>
+                  <div class="col-lg-6 mt-4 mt-lg-0">
+                    <h6 class="mb-3">演示入口</h6>
+                    <div class="form-group">
+                      <label for="yelp-demo-user">Yelp 演示账号</label>
+                      <select id="yelp-demo-user"
+                              class="form-control"
+                              x-model="formData.selectedYelpUser"
+                              {% if not yelp_demo_users %}disabled{% endif %}>
+                        <option value="">请选择演示账号</option>
+                        {% for user in yelp_demo_users %}
+                          <option value="{{ user.id }}">
+                            {{ user.username }} · {{ user.review_count }} 条评论
+                          </option>
+                        {% endfor %}
+                      </select>
+                      {% if not yelp_demo_users %}
+                        <small class="form-text text-muted">暂无可用 Yelp 演示账号，请先导入 Yelp 用户和评论数据。</small>
+                      {% endif %}
                     </div>
-                    {# Submit Button - Using Component #}
-                    <div class="mt-4">
-                      {% include "components/submit-button.html" with button_text="登录" button_loading_text="登录中..." button_class="btn-success" %}
+                    <button class="btn btn-outline-primary btn-block mb-3"
+                            type="button"
+                            @click="loginYelpDemo"
+                            :disabled="isSubmitting || !formData.selectedYelpUser || {{ yelp_demo_users|length }} === 0">
+                      使用 Yelp 演示账号进入
+                    </button>
+                    <div class="border-top pt-3 mt-3">
+                      <p class="text-muted mb-3">管理员演示入口会使用系统中的第一条用户记录作为演示身份。</p>
+                      <button class="btn btn-outline-dark btn-block"
+                              type="button"
+                              @click="loginAdminDemo"
+                              :disabled="isSubmitting">
+                        管理员演示登录
+                      </button>
                     </div>
-                    {# Register Link #}
-                    <div class="mt-4 text-center">
-                      <a href="{% url 'register' %}" class="text-muted">
-                        <i class="mdi mdi-account-circle mr-1"></i>创建新账户
-                      </a>
-                    </div>
-                  </form>
+                  </div>
                 </div>
               </div>
             </div>

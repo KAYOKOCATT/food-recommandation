@@ -10,10 +10,10 @@
                         <!-- 导航 -->
                         <ol class="breadcrumb m-0">
                             <li class="breadcrumb-item">
-                                <a href="/api/v1/user_index">主页</a>
+                                <a href="{% url 'user_home' %}">主页</a>
                             </li>
                             <li class="breadcrumb-item active">
-                                <a href="/api/v1/food_list">美食列表</a>
+                                <a href="{% url 'food_list' %}">美食列表</a>
                             </li>
                             <li class="breadcrumb-item active">美食详情</li>
                         </ol>
@@ -64,12 +64,18 @@
                                             </div>
                                             <div class="product-add-form mb-3">
                                                 <form action="" class="d-flex align-items-center justify-content-start">
-                                                    <a id="addcollect"
-                                                    href="javascript:void(0);"
-                                                    class="btn {% if is_collect %}btn-danger{% else %}btn-secondary{% endif %}"
-                                                    data-is-collect="{% if is_collect %}true{% else %}false{% endif %}">
-                                                        <i class="fas fa-heart"></i>
-                                                    </a>
+                                                    {% if can_submit_interactions %}
+                                                        <a id="addcollect"
+                                                        href="javascript:void(0);"
+                                                        class="btn {% if is_collect %}btn-danger{% else %}btn-secondary{% endif %}"
+                                                        data-is-collect="{% if is_collect %}true{% else %}false{% endif %}">
+                                                            <i class="fas fa-heart"></i>
+                                                        </a>
+                                                    {% elif current_user %}
+                                                        <span class="btn btn-light disabled">演示账号不可收藏</span>
+                                                    {% else %}
+                                                        <a href="{% url 'login' %}" class="btn btn-secondary">登录后收藏</a>
+                                                    {% endif %}
                                                 </form>
                                             </div>
                                             <div class="prodeuct-info-area mt-80">
@@ -117,28 +123,33 @@
                                                                 <h4 class="font-weight-bold">发表自己意见</h4>
                                                             </div>
                                                             <!-- 发表评论表单 -->
-                                                            <form id="commentForm"
-                                                                action="{% url 'comment' foodinfo.id %}"
-                                                                method="post"
-                                                                class="pt-3">
-                                                                {% csrf_token %}
-                                                                <div class="review-form d-flex align-items-center">
-                                                                    <div class="review-form flex-grow-1 mb-0 mr-3">
-                                                                        <textarea name="comment"
-                                                                                id="commentText"
-                                                                                class="form-control border"
-                                                                                rows="1"
-                                                                                placeholder="请输入评论内容"
-                                                                                required></textarea>
+                                                            {% if can_submit_interactions %}
+                                                                <form id="commentForm"
+                                                                    action="{% url 'comment' foodinfo.id %}"
+                                                                    method="post"
+                                                                    class="pt-3">
+                                                                    {% csrf_token %}
+                                                                    <div class="review-form d-flex align-items-center">
+                                                                        <div class="review-form flex-grow-1 mb-0 mr-3">
+                                                                            <textarea name="comment"
+                                                                                    id="commentText"
+                                                                                    class="form-control border"
+                                                                                    rows="1"
+                                                                                    placeholder="请输入评论内容"
+                                                                                    required></textarea>
+                                                                        </div>
+                                                                        <div class="review-form-button">
+                                                                            <button type="submit" class="btn btn-primary">
+                                                                                <i class="fas fa-paper-plane"></i>
+                                                                            </button>
+                                                                        </div>
                                                                     </div>
-                                                                    <!-- 发表评论按钮 -->
-                                                                    <div class="review-form-button">
-                                                                        <button type="submit" class="btn btn-primary">
-                                                                            <i class="fas fa-paper-plane"></i>
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            </form>
+                                                                </form>
+                                                            {% elif current_user %}
+                                                                <div class="alert alert-light border mt-3 mb-0">当前为演示账号，不开放站内评论写入。</div>
+                                                            {% else %}
+                                                                <div class="alert alert-light border mt-3 mb-0">登录后可发表评论。</div>
+                                                            {% endif %}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -196,6 +207,7 @@
                 </div>
             </div>
         </div>
+        {% if can_submit_interactions %}
         <script>
     document.getElementById('addcollect').addEventListener('click',function(){
         var collectButton = this;
@@ -288,4 +300,5 @@
                 commentList.insertAdjacentHTML('beforeEnd',commentHTML);
             }
         </script>
+        {% endif %}
     {% endblock %}

@@ -23,19 +23,26 @@
     ]
 """
 import json
-import re
 import os
+import re
 from json import JSONDecodeError
 from typing import Optional, Union
 
 from django import forms
-from django.contrib.auth.hashers import check_password
-from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth.hashers import check_password, make_password
+from django.db.models import Count
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from config import settings
 
 from apps.users.models import User
+from apps.users.session_auth import (
+    build_identity,
+    login_admin_user,
+    login_local_user,
+    login_yelp_demo_user,
+    require_identity,
+)
 
 
 def login(request: HttpRequest) -> Union[JsonResponse, HttpResponse]:
@@ -92,6 +99,10 @@ def login(request: HttpRequest) -> Union[JsonResponse, HttpResponse]:
         - 401: 认证失败
     """
 
+    identity = build_identity(request)
+    if request.method == 'GET' and identity.is_authenticated:
+        return redirect(_default_redirect(identity))
+
     if request.method == 'POST':
         try:
             data: dict[str, str] = json.loads(request.body)
@@ -106,18 +117,76 @@ def login(request: HttpRequest) -> Union[JsonResponse, HttpResponse]:
         user: Optional[User] = User.objects.filter(username=username).first()
 
         if user and check_password(password, user.password):
-            request.session['user_id'] = user.id
+            login_local_user(request, user)
             return api_response(
                 code=200,
                 msg='登录成功',
                 data={
                     'user_id': user.id,
                     'username': user.username,
-                    'redirect': '/api/v1/user_index/',
+                    'redirect': '/api/v1/users/home/',
                 },
             )
         return api_response(code=4003, msg='用户名或密码错误', data={}, status=401)
-    return render(request, 'auth/login-refactored.html')
+    return render(
+        request,
+        'auth/login-refactored.html',
+        {'yelp_demo_users': _get_yelp_demo_users()},
+    )
+
+
+def login_yelp_demo(request: HttpRequest) -> JsonResponse:
+    if request.method != "POST":
+        return api_response(code=405, msg="请求方法不允许", data={}, status=405)
+
+    try:
+        data = json.loads(request.body)
+    except JSONDecodeError:
+        return api_response(code=4001, msg='请求体不是合法 JSON', data={}, status=400)
+
+    user_id = data.get("user_id")
+    if not user_id:
+        return api_response(code=4002, msg="请选择 Yelp 演示账号", data={}, status=400)
+
+    user = (
+        User.objects.filter(id=user_id, source="yelp")
+        .annotate(review_count=Count("yelp_reviews"))
+        .filter(review_count__gt=0)
+        .first()
+    )
+    if user is None:
+        return api_response(code=4004, msg="该 Yelp 演示账号不可用", data={}, status=400)
+
+    login_yelp_demo_user(request, user)
+    return api_response(
+        code=200,
+        msg="Yelp 演示登录成功",
+        data={
+            "user_id": user.id,
+            "username": user.username,
+            "redirect": "/api/v1/yelp/recommendations/",
+        },
+    )
+
+
+def login_admin_demo(request: HttpRequest) -> JsonResponse:
+    if request.method != "POST":
+        return api_response(code=405, msg="请求方法不允许", data={}, status=405)
+
+    admin_user = User.objects.order_by("id").first()
+    if admin_user is None:
+        return api_response(code=5001, msg="当前没有可用管理员演示账号", data={}, status=503)
+
+    login_admin_user(request, admin_user)
+    return api_response(
+        code=200,
+        msg="管理员演示登录成功",
+        data={
+            "user_id": admin_user.id,
+            "username": admin_user.username,
+            "redirect": "/api/v1/admin/home/",
+        },
+    )
 
 
 # ---------- 辅助函数：构建统一响应 ----------
@@ -201,6 +270,13 @@ def register(request):
     return render(request, 'auth/register-refactored.html')
 
 def user_index(request):
+    identity = require_identity(
+        request,
+        allow_local_user=True,
+        allow_yelp_demo_user=True,
+    )
+    if isinstance(identity, HttpResponse):
+        return identity
     return render(request, 'auth/user_index.html')
 
 def logout(request):
@@ -208,11 +284,11 @@ def logout(request):
     return redirect('login')
 
 def user_view(request):
-    user_id = request.session.get('user_id')
-    if not user_id:
-        return HttpResponse('请先登录',status=401)
-    
-    user = get_object_or_404(User,id=user_id)
+    identity = require_identity(request, allow_local_user=True)
+    if isinstance(identity, HttpResponse):
+        return identity
+
+    user = get_object_or_404(User, id=identity.user.id)
     
     if request.method == 'POST':
         user.username = request.POST.get('username')
@@ -232,18 +308,18 @@ def user_view(request):
             
             user.face ='/image/' + avatar.name
         user.save()
-        return redirect('user_view')
+        return redirect('user_profile')
     
     else:
         from_page =request.GET.get('fp',1)
         return render(request, 'auth/user_view.html',{'user':user,'from_page':from_page})
 
 def change_password(request):
-    user_id = request.session.get('user_id')
-    if not user_id:
-        return HttpResponse('请先登录',status=401)
-    
-    user = get_object_or_404(User,id=user_id)
+    identity = require_identity(request, allow_local_user=True)
+    if isinstance(identity, HttpResponse):
+        return identity
+
+    user = get_object_or_404(User, id=identity.user.id)
     error_message = None
     success_message = None
     
@@ -262,3 +338,27 @@ def change_password(request):
             success_message = '密码修改成功'
             return render(request,"auth/change_password.html",{'user':user,'success_message':success_message})
     return render(request,"auth/change_password.html",{'user':user,'error_message':error_message})
+
+
+def admin_home(request: HttpRequest) -> HttpResponse:
+    identity = require_identity(request, allow_admin=True)
+    if isinstance(identity, HttpResponse):
+        return identity
+    return render(request, "auth/admin_home.html", {"admin_user": identity.user})
+
+
+def _get_yelp_demo_users() -> list[User]:
+    return list(
+        User.objects.filter(source="yelp")
+        .annotate(review_count=Count("yelp_reviews"))
+        .filter(review_count__gt=0)
+        .order_by("-review_count", "id")[:30]
+    )
+
+
+def _default_redirect(identity) -> str:
+    if identity.is_admin:
+        return "admin_home"
+    if identity.is_yelp_demo_user:
+        return "recommendations:yelp_recommendations"
+    return "user_home"

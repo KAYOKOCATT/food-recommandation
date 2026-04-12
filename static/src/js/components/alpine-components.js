@@ -175,11 +175,12 @@ export function createFormComponent(config) {
  * @returns {Object} Alpine.js component
  */
 export function loginForm() {
-  return createFormComponent({
+  const component = createFormComponent({
     initialData: {
       username: "",
       password: "",
       remember: false,
+      selectedYelpUser: "",
     },
 
     validationRules: {
@@ -191,25 +192,64 @@ export function loginForm() {
 
     async onSuccess(response) {
       logger.success("Login successful", response);
-
-      // Check if response has standardized format {code, data, msg}
-      if (response.code !== 200) {
-        // Handle error response with code: 500
-        throw new Error(response.msg || "Login failed");
-      }
-
-      // Show success notification
-      const Alpine = window.Alpine;
-      if (Alpine?.store("notification")) {
-        Alpine.store("notification").show(response.msg || "Login successful!", "success", 1500);
-      }
-
-      // Redirect after delay
-      setTimeout(() => {
-        window.location.href = "/api/v1/user_index/";
-      }, 1500);
+      redirectWithNotification(response, "登录成功");
     }
   });
+
+  return {
+    ...component,
+
+    async loginYelpDemo() {
+      if (!this.formData.selectedYelpUser) {
+        this.showNotification("请选择 Yelp 演示账号", "warning");
+        return;
+      }
+      await this.submitDemoLogin("/api/v1/users/login/yelp-demo/", {
+        user_id: this.formData.selectedYelpUser,
+      });
+    },
+
+    async loginAdminDemo() {
+      await this.submitDemoLogin("/api/v1/users/login/admin-demo/", {});
+    },
+
+    async submitDemoLogin(url, payload) {
+      this.isSubmitting = true;
+      try {
+        const response = await post(url, payload);
+        redirectWithNotification(response, response.msg || "登录成功");
+      } catch (error) {
+        this.showNotification(
+          error.data?.msg || error.message || "登录失败",
+          "error"
+        );
+      } finally {
+        this.isSubmitting = false;
+      }
+    },
+
+    showNotification(message, type = "info", duration = 3000) {
+      const Alpine = window.Alpine;
+      if (Alpine?.store("notification")) {
+        Alpine.store("notification").show(message, type, duration);
+      }
+    },
+  };
+}
+
+function redirectWithNotification(response, fallbackMessage) {
+  const Alpine = window.Alpine;
+  if (Alpine?.store("notification")) {
+    Alpine.store("notification").show(
+      response.msg || fallbackMessage,
+      "success",
+      1200
+    );
+  }
+
+  setTimeout(() => {
+    window.location.href = response.data?.redirect || "/";
+  }, 1200);
 }
 
 /**

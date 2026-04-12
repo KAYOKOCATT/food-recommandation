@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from apps.recommendations.models import YelpBusiness
 from apps.recommendations.services import YelpService
 from apps.users.models import User
+from apps.users.session_auth import build_identity, require_identity
 
 
 def yelp_business_list(request: HttpRequest) -> HttpResponse:
@@ -46,17 +47,15 @@ def yelp_business_detail(request: HttpRequest, business_id: str) -> HttpResponse
 
 
 def _session_user(request: HttpRequest) -> User | None:
-    user_id = request.session.get("user_id")
-    if not user_id:
-        return None
-    return User.objects.filter(id=user_id).first()
+    return build_identity(request).user
 
 
 @require_POST
 def submit_yelp_review(request: HttpRequest, business_id: str) -> JsonResponse:
-    user = _session_user(request)
-    if user is None:
-        return JsonResponse({"status": "error", "message": "请先登录"}, status=401)
+    identity = require_identity(request, allow_local_user=True, api=True)
+    if isinstance(identity, JsonResponse):
+        return identity
+    user = identity.user
 
     business = get_object_or_404(YelpBusiness, business_id=business_id)
     stars_raw = request.POST.get("stars", "").strip()
@@ -90,4 +89,23 @@ def submit_yelp_review(request: HttpRequest, business_id: str) -> JsonResponse:
                 "source": review.source,
             },
         }
+    )
+
+
+def yelp_recommendations(request: HttpRequest) -> HttpResponse:
+    identity = require_identity(
+        request,
+        allow_local_user=True,
+        allow_yelp_demo_user=True,
+    )
+    if isinstance(identity, JsonResponse):
+        return identity
+    if isinstance(identity, HttpResponse):
+        return identity
+
+    recommendations = YelpService.get_usercf_recommendations(identity.user.id, top_k=12)
+    return render(
+        request,
+        "recommendations/yelp_recommendations.html",
+        {"recommendations": recommendations},
     )

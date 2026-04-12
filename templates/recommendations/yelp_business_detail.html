@@ -7,7 +7,7 @@
           <div class="col-md-8">
             <h4 class="page-title mb-1">{{ business.name }}</h4>
             <ol class="breadcrumb m-0">
-              <li class="breadcrumb-item"><a href="/api/v1/user_index">主页</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'user_home' %}">主页</a></li>
               <li class="breadcrumb-item">
                 <a href="{% url 'recommendations:yelp_business_list' %}">Yelp 餐厅</a>
               </li>
@@ -54,7 +54,7 @@
                     <p class="text-muted small mb-0">站内登录用户可提交评分，可选填写评论文本</p>
                   </div>
                 </div>
-                {% if current_user %}
+                {% if can_submit_interactions %}
                   <form id="yelpReviewForm"
                         action="{% url 'recommendations:submit_yelp_review' business.business_id %}"
                         method="post"
@@ -87,6 +87,8 @@
                     </div>
                     <div id="reviewFeedback" class="small mt-3" style="display:none;"></div>
                   </form>
+                {% elif current_user %}
+                  <div class="alert alert-light border mb-0">当前为演示账号，仅支持浏览和查看推荐，不开放站内评分写入。</div>
                 {% else %}
                   <div class="alert alert-light border mb-0">登录后可提交餐厅评分和评论。</div>
                 {% endif %}
@@ -156,9 +158,9 @@
     </div>
   </div>
 {% endblock content %}
-{% block js %}
+{% block extra_js %}
   {{ block.super }}
-  {% if current_user %}
+  {% if can_submit_interactions %}
     <script>
       document.getElementById('yelpReviewForm').addEventListener('submit', async function(event) {
         event.preventDefault();
@@ -181,4 +183,4 @@
       });
     </script>
   {% endif %}
-{% endblock js %}
+{% endblock extra_js %}
