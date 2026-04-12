@@ -20,7 +20,7 @@ from typing import Any
 
 from django.conf import settings
 from django.db.models import Avg, Count, DateField
-from django.db.models.functions import TruncDate
+from django.db.models.functions import Cast, TruncDate
 
 from apps.foods.models import Collect, Comment, Foods
 from apps.users.models import User
@@ -103,8 +103,8 @@ class ChartService:
 
         # 查询每日新用户注册
         user_stats = (
-            User.objects.filter(regtime__date__gte=start_date)
-            .annotate(date=TruncDate("regtime", output_field=DateField()))
+            User.objects.annotate(date=Cast("regtime", DateField()))
+            .filter(date__gte=start_date)
             .values("date")
             .annotate(count=Count("id"))
         )
@@ -112,8 +112,8 @@ class ChartService:
 
         # 查询每日新增收藏
         collect_stats = (
-            Collect.objects.filter(added_time__date__gte=start_date)
-            .annotate(date=TruncDate("added_time", output_field=DateField()))
+            Collect.objects.annotate(date=Cast("added_time", DateField()))
+            .filter(date__gte=start_date)
             .values("date")
             .annotate(count=Count("id"))
         )
@@ -121,8 +121,8 @@ class ChartService:
 
         # 查询每日新增评论
         comment_stats = (
-            Comment.objects.filter(ctime__date__gte=start_date)
-            .annotate(date=TruncDate("ctime", output_field=DateField()))
+            Comment.objects.annotate(date=Cast("ctime", DateField()))
+            .filter(date__gte=start_date)
             .values("date")
             .annotate(count=Count("id"))
         )
