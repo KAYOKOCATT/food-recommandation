@@ -31,21 +31,6 @@
 
 ## 维护主线
 
-### P0：收口现有链路，降低维护成本
-
-- 将 Yelp 图表数据源逐步从 JSON 文件读取迁移到 ORM 查询，优先处理地理分布和统计类接口。
-- 明确数据边界：数据库负责页面展示和统计查询，JSON 只负责离线推荐候选或相似度结果。
-- 收敛 `ChartService` 和 Yelp 页面读取逻辑，避免同一业务信息同时依赖 ORM 和 `yelp_business_profiles.json`。
-- 梳理页面在离线文件缺失、JSON 损坏、候选商家不存在时的统一降级策略。
-
-### P1：补齐回归测试，先稳住现有能力
-
-- 补充 Yelp 列表页筛选、分页、空结果和非法参数边界测试。
-- 补充 Yelp 详情页在相似餐厅缺失、离线文件异常、评论为空时的回退测试。
-- 补充 `import_yelp_data` 的幂等更新、缺字段、非餐厅数据过滤测试。
-- 评估并补充 `build_yelp_content_recs` 的输出结构、空输入、异常输入测试。
-- 为中文菜品补回归测试：收藏/取消收藏时 `collect_count` 一致性、发表评论时 `comment_count` 增量维护、UserCF 页面空结果和缺文件场景。
-
 ### P2：推进 Yelp 协同过滤主线
 
 - 基于 `YelpReview(stars)` 构造 user-business 矩阵，实现 Yelp ItemCF / UserCF 的离线 Top-K 召回。

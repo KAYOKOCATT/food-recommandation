@@ -124,12 +124,51 @@ class YelpViewTests(TestCase):
             stars=5.0,
             text="Excellent omakase.",
         )
+        for index in range(2, 22):
+            YelpBusiness.objects.create(
+                business_id=f"b{index}",
+                name=f"Restaurant {index}",
+                categories="Restaurants, Cafes",
+                stars=4.0,
+                review_count=100 - index,
+                city="Philadelphia" if index % 2 == 0 else "Boston",
+                state="PA" if index % 2 == 0 else "MA",
+                is_open=True,
+            )
 
     def test_yelp_business_list_renders(self) -> None:
         response = self.client.get("/api/v1/yelp/restaurants/")
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Alpha Sushi")
+
+    def test_yelp_business_list_filters_by_query_and_city(self) -> None:
+        response = self.client.get(
+            "/api/v1/yelp/restaurants/",
+            {"q": "Alpha", "city": "Philadelphia"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Alpha Sushi")
+        self.assertNotContains(response, "Restaurant 3")
+
+    def test_yelp_business_list_renders_empty_state_for_no_matches(self) -> None:
+        response = self.client.get("/api/v1/yelp/restaurants/", {"q": "does-not-exist"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "暂无可展示的 Yelp 餐厅数据。")
+
+    def test_yelp_business_list_supports_pagination(self) -> None:
+        response = self.client.get("/api/v1/yelp/restaurants/", {"page": "2"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "2 / 2")
+
+    def test_yelp_business_list_invalid_page_falls_back_to_first_page(self) -> None:
+        response = self.client.get("/api/v1/yelp/restaurants/", {"page": "bad"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "1 / 2")
 
     def test_yelp_business_detail_renders(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -142,6 +181,28 @@ class YelpViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Excellent omakase.")
+
+    def test_yelp_business_detail_renders_empty_reviews_state(self) -> None:
+        business = YelpBusiness.objects.create(
+            business_id="empty-reviews",
+            name="No Review Cafe",
+            categories="Restaurants, Cafes",
+            stars=4.0,
+            review_count=0,
+            city="Philadelphia",
+            state="PA",
+            is_open=True,
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            similarity_path = Path(temp_dir) / "yelp_content_itemcf.json"
+            similarity_path.write_text(json.dumps({"empty-reviews": []}), encoding="utf-8")
+            with patch.object(YelpService, "SIMILARITY_FILE", similarity_path):
+                response = self.client.get(
+                    f"/api/v1/yelp/restaurants/{business.business_id}/"
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "当前餐厅暂无可展示的评论。")
 
     def test_yelp_business_detail_returns_404_for_unknown_business(self) -> None:
         response = self.client.get("/api/v1/yelp/restaurants/missing/")

@@ -173,16 +173,24 @@ class Command(BaseCommand):
         business_pk_map = YelpBusiness.objects.in_bulk(business_ids, field_name="business_id")
         batch: list[YelpReview] = []
         imported = 0
-        skipped = 0
+        skipped_missing_review_id = 0
+        skipped_missing_business = 0
+        skipped_missing_user = 0
 
         for record in iter_json_lines(source, limit=line_limit):
             review_id = str(record.get("review_id") or "")
             business_id = str(record.get("business_id") or "")
             external_user_id = str(record.get("user_id") or "")
+            if not review_id:
+                skipped_missing_review_id += 1
+                continue
             business = business_pk_map.get(business_id)
             user_id = user_map.get(external_user_id)
-            if not review_id or business is None or user_id is None:
-                skipped += 1
+            if business is None:
+                skipped_missing_business += 1
+                continue
+            if user_id is None:
+                skipped_missing_user += 1
                 continue
 
             batch.append(
@@ -203,9 +211,19 @@ class Command(BaseCommand):
             imported += self._upsert_reviews(batch)
 
         self._refresh_aggregated_review_counts()
+        skipped_total = (
+            skipped_missing_review_id
+            + skipped_missing_business
+            + skipped_missing_user
+        )
         self.stdout.write(
             self.style.SUCCESS(
-                f"Imported/updated {imported} Yelp reviews. Skipped {skipped} rows missing business/user."
+                "Imported/updated "
+                f"{imported} Yelp reviews. "
+                f"Skipped {skipped_total} rows "
+                f"(missing review_id={skipped_missing_review_id}, "
+                f"missing business={skipped_missing_business}, "
+                f"missing user={skipped_missing_user})."
             )
         )
 
