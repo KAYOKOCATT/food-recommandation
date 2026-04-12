@@ -11,6 +11,7 @@ from django.test import Client, TestCase
 from django.test.utils import CaptureQueriesContext
 
 from apps.foods.models import Collect, Comment, Foods
+from apps.foods.ingestion import CrawlResult, ImportResult
 from apps.recommendations.models import YelpBusiness, YelpReview
 from apps.recommendations.services.yelp_service import YelpService
 from apps.users.demo_candidates import YelpDemoCandidate
@@ -318,3 +319,50 @@ class AdminCrudTests(TestCase):
         review = YelpReview.objects.get(review_id="admin-review-1")
         self.assertEqual(review.user_id, self.local_user.id)
         self.assertEqual(review.business_id, self.business.id)
+
+    def test_admin_food_ingestion_page_renders(self) -> None:
+        self._login_admin()
+
+        response = self.client.get("/api/v1/admin/foods/ingestion/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "中文菜品数据采集")
+
+    def test_admin_food_ingestion_crawl_uses_service(self) -> None:
+        self._login_admin()
+        with patch(
+            "apps.users.admin_views.crawl_to_csv",
+            return_value=CrawlResult(csv_path=Path("food.csv"), page_count=2, row_count=6),
+        ) as mocked_crawl:
+            response = self.client.post(
+                "/api/v1/admin/foods/ingestion/",
+                {
+                    "action": "crawl",
+                    "source_url": "https://example.com/cuisine/",
+                    "page_count": "2",
+                },
+                follow=True,
+            )
+
+        self.assertEqual(response.status_code, 200)
+        mocked_crawl.assert_called_once_with("https://example.com/cuisine/", 2)
+        self.assertContains(response, "抓取完成")
+
+    def test_admin_food_ingestion_import_uses_service(self) -> None:
+        self._login_admin()
+        with patch(
+            "apps.users.admin_views.import_csv_to_foods",
+            return_value=ImportResult(csv_path=Path("food.csv"), created_count=8, cleared_count=3),
+        ) as mocked_import:
+            response = self.client.post(
+                "/api/v1/admin/foods/ingestion/",
+                {
+                    "action": "import",
+                    "clear_existing": "on",
+                },
+                follow=True,
+            )
+
+        self.assertEqual(response.status_code, 200)
+        mocked_import.assert_called_once_with(clear_existing=True)
+        self.assertContains(response, "新增 8 条菜品")

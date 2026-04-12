@@ -8,6 +8,26 @@ from apps.recommendations.models import YelpBusiness, YelpReview
 from apps.users.models import User
 
 
+class FoodCrawlForm(forms.Form):
+    source_url = forms.URLField(label="分类页 URL")
+    page_count = forms.IntegerField(label="爬取页数", min_value=1, max_value=50, initial=3)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _apply_bootstrap_classes(self)
+
+
+class FoodImportForm(forms.Form):
+    clear_existing = forms.BooleanField(
+        label="导入前清空现有菜品表",
+        required=False,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _apply_bootstrap_classes(self)
+
+
 def _apply_bootstrap_classes(form: forms.BaseForm) -> None:
     for field in form.fields.values():
         widget = field.widget

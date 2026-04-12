@@ -11,10 +11,18 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from apps.foods.models import Collect, Comment, Foods
+from apps.foods.ingestion import (
+    crawl_to_csv,
+    csv_snapshot,
+    delete_csv,
+    import_csv_to_foods,
+)
 from apps.recommendations.models import YelpBusiness, YelpReview
 from apps.users.admin_forms import (
     CollectAdminForm,
     CommentAdminForm,
+    FoodCrawlForm,
+    FoodImportForm,
     FoodsAdminForm,
     UserAdminForm,
     YelpBusinessAdminForm,
@@ -55,6 +63,7 @@ def admin_home(request: HttpRequest) -> HttpResponse:
                 _card("菜品", Foods.objects.count(), "admin_food_list"),
                 _card("收藏", Collect.objects.count(), "admin_collect_list"),
                 _card("评论", Comment.objects.count(), "admin_comment_list"),
+                _card("数据采集", 0, "admin_food_ingestion"),
             ],
         },
         {
@@ -169,6 +178,64 @@ def yelp_review_edit(request: HttpRequest, object_id: int) -> HttpResponse:
 
 def yelp_review_delete(request: HttpRequest, object_id: int) -> HttpResponse:
     return _delete_object(request, YELP_REVIEW_CONFIG, object_id)
+
+
+def food_ingestion(request: HttpRequest) -> HttpResponse:
+    identity = _require_admin(request)
+    if isinstance(identity, HttpResponse):
+        return identity
+
+    crawl_form = FoodCrawlForm()
+    import_form = FoodImportForm()
+    if request.method == "POST":
+        action = request.POST.get("action", "")
+        try:
+            if action == "crawl":
+                crawl_form = FoodCrawlForm(request.POST)
+                if crawl_form.is_valid():
+                    result = crawl_to_csv(
+                        crawl_form.cleaned_data["source_url"],
+                        crawl_form.cleaned_data["page_count"],
+                    )
+                    messages.success(
+                        request,
+                        f"抓取完成：共写入 {result.row_count} 条记录到 {result.csv_path.name}。",
+                    )
+                    return redirect("admin_food_ingestion")
+            elif action == "import":
+                import_form = FoodImportForm(request.POST)
+                if import_form.is_valid():
+                    result = import_csv_to_foods(
+                        clear_existing=bool(import_form.cleaned_data["clear_existing"])
+                    )
+                    extra = ""
+                    if result.cleared_count:
+                        extra = f"，导入前已清空 {result.cleared_count} 条旧菜品"
+                    messages.success(
+                        request,
+                        f"导入完成：新增 {result.created_count} 条菜品{extra}。",
+                    )
+                    return redirect("admin_food_ingestion")
+            elif action == "delete_csv":
+                deleted = delete_csv()
+                if deleted:
+                    messages.success(request, "CSV 文件已删除。")
+                else:
+                    messages.info(request, "CSV 文件不存在，无需删除。")
+                return redirect("admin_food_ingestion")
+            else:
+                messages.error(request, "未知操作。")
+        except Exception as exc:  # pylint: disable=broad-except
+            messages.error(request, f"操作失败：{exc}")
+
+    context = {
+        "menu_group": "中文菜品数据",
+        "csv_info": csv_snapshot(),
+        "crawl_form": crawl_form,
+        "import_form": import_form,
+        "food_count": Foods.objects.count(),
+    }
+    return render(request, "auth/admin/food_ingestion.html", context)
 
 
 def _render_list(request: HttpRequest, config: ResourceConfig) -> HttpResponse:

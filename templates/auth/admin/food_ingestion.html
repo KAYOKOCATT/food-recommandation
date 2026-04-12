@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="page-content">
+    <div class="page-title-box">
+      <div class="container-fluid">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h4 class="page-title mb-1">中文菜品数据采集</h4>
+            <ol class="breadcrumb m-0">
+              <li class="breadcrumb-item">{{ menu_group }}</li>
+              <li class="breadcrumb-item active">数据采集</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-content-wrapper">
+      <div class="container-fluid">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="mb-3">当前状态</h5>
+            <p class="mb-2">系统内菜品数：<strong>{{ food_count }}</strong></p>
+            <p class="mb-2">CSV 路径：<code>{{ csv_info.path }}</code></p>
+            <p class="mb-0">
+              {% if csv_info.exists %}
+                CSV 已存在，当前共 {{ csv_info.row_count }} 条记录。
+              {% else %}
+                当前没有可导入的 CSV 文件。
+              {% endif %}
+            </p>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+              <div class="card-body">
+                <h5 class="mb-3">1. 抓取分类页到 CSV</h5>
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="crawl">
+                  {% for field in crawl_form %}
+                    <div class="form-group">
+                      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                      {{ field }}
+                      {% for error in field.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endfor %}
+                  <button type="submit" class="btn btn-primary">开始抓取</button>
+                </form>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+              <div class="card-body">
+                <h5 class="mb-3">2. 从 CSV 导入菜品</h5>
+                <form method="post" class="mb-3">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="import">
+                  {% for field in import_form %}
+                    <div class="form-group">
+                      <div class="form-check">
+                        {{ field }}
+                        <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                      </div>
+                      {% for error in field.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endfor %}
+                  <button type="submit" class="btn btn-primary" {% if not csv_info.exists %}disabled{% endif %}>导入到 Foods</button>
+                </form>
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete_csv">
+                  <button type="submit" class="btn btn-outline-danger" {% if not csv_info.exists %}disabled{% endif %}>
+                    删除当前 CSV
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

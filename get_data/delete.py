@@ -1,7 +1,8 @@
-import os
+from pathlib import Path
 
-try:
-        os.remove('food.csv')
-        print("已成功删除food.csv文件")
-except Exception as e:
-        print(f"删除food.csv文件失败: {str(e)}")
+from apps.foods.ingestion import delete_csv
+
+if delete_csv(Path("food.csv")):
+    print("已成功删除food.csv文件")
+else:
+    print("food.csv文件不存在，无需删除")

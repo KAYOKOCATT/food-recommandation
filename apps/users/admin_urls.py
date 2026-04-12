@@ -9,6 +9,7 @@ urlpatterns = [
     path("users/<int:object_id>/edit/", admin_views.user_edit, name="admin_user_edit"),
     path("users/<int:object_id>/delete/", admin_views.user_delete, name="admin_user_delete"),
     path("foods/", admin_views.food_list, name="admin_food_list"),
+    path("foods/ingestion/", admin_views.food_ingestion, name="admin_food_ingestion"),
     path("foods/create/", admin_views.food_create, name="admin_food_create"),
     path("foods/<int:object_id>/edit/", admin_views.food_edit, name="admin_food_edit"),
     path("foods/<int:object_id>/delete/", admin_views.food_delete, name="admin_food_delete"),
