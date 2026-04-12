@@ -5,9 +5,10 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
+from django.core.management import call_command
 from django.test import Client, TestCase
 
-from apps.recommendations.models import YelpBusiness
+from apps.recommendations.models import YelpBusiness, YelpReview
 from apps.recommendations.services.yelp_service import YelpService
 from apps.users.models import User
 
@@ -94,6 +95,55 @@ class YelpServiceTests(TestCase):
                 "b1",
                 top_k=6,
                 similarity_file=similarity_path,
+            )
+
+        self.assertEqual(result, [])
+
+    def test_get_usercf_recommendations_hydrates_from_json_and_skips_seen(self) -> None:
+        user = User.objects.create(
+            username="local-user",
+            password="secret123",
+            email="local@example.com",
+            phone="13800138001",
+        )
+        YelpReview.objects.create(
+            review_id="local_r1",
+            business=self.business_1,
+            user=user,
+            stars=5.0,
+            source="local",
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            recommendation_path = Path(temp_dir) / "yelp_usercf.json"
+            recommendation_path.write_text(
+                json.dumps(
+                    {
+                        str(user.id): [
+                            {"business_id": "b1", "score": 4.9},
+                            {"business_id": "b2", "score": 4.7},
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = YelpService.get_usercf_recommendations(
+                user.id,
+                top_k=5,
+                recommendation_file=recommendation_path,
+            )
+
+        self.assertEqual([item.business.business_id for item in result], ["b2"])
+
+    def test_get_usercf_recommendations_returns_empty_when_json_is_invalid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            recommendation_path = Path(temp_dir) / "yelp_usercf.json"
+            recommendation_path.write_text("{invalid", encoding="utf-8")
+
+            result = YelpService.get_usercf_recommendations(
+                1,
+                recommendation_file=recommendation_path,
             )
 
         self.assertEqual(result, [])
@@ -246,3 +296,233 @@ class YelpViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "当前餐厅暂无相似推荐。")
+
+    def test_submit_yelp_review_requires_login(self) -> None:
+        response = self.client.post(
+            f"/api/v1/yelp/restaurants/{self.business.business_id}/review/",
+            {"stars": "5", "comment": "Love it"},
+        )
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_submit_yelp_review_validates_stars(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session.save()
+
+        response = self.client.post(
+            f"/api/v1/yelp/restaurants/{self.business.business_id}/review/",
+            {"stars": "6", "comment": "Too high"},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(YelpReview.objects.filter(source="local").count(), 0)
+
+    def test_submit_yelp_review_creates_multiple_local_reviews(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session.save()
+
+        url = f"/api/v1/yelp/restaurants/{self.business.business_id}/review/"
+        first = self.client.post(url, {"stars": "4", "comment": "Pretty good"})
+        second = self.client.post(url, {"stars": "5", "comment": "Actually great"})
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(
+            YelpReview.objects.filter(
+                business=self.business,
+                user=self.user,
+                source="local",
+            ).count(),
+            2,
+        )
+        local_reviews = list(
+            YelpReview.objects.filter(
+                business=self.business,
+                user=self.user,
+                source="local",
+            ).order_by("id")
+        )
+        self.business.refresh_from_db()
+        self.assertEqual(local_reviews[0].text, "Pretty good")
+        self.assertEqual(local_reviews[1].stars, 5.0)
+        self.assertEqual(local_reviews[1].text, "Actually great")
+        self.assertEqual(self.business.aggregated_review_count, 3)
+
+
+class YelpReviewUserCFCommandTests(TestCase):
+    def setUp(self) -> None:
+        self.business_1 = YelpBusiness.objects.create(
+            business_id="b1",
+            name="Alpha Sushi",
+            categories="Restaurants, Sushi Bars",
+            stars=4.5,
+            review_count=120,
+            city="Philadelphia",
+            state="PA",
+            is_open=True,
+        )
+        self.business_2 = YelpBusiness.objects.create(
+            business_id="b2",
+            name="Beta Sushi",
+            categories="Restaurants, Japanese",
+            stars=4.2,
+            review_count=80,
+            city="Philadelphia",
+            state="PA",
+            is_open=True,
+        )
+        self.business_3 = YelpBusiness.objects.create(
+            business_id="b3",
+            name="Gamma Noodles",
+            categories="Restaurants, Noodles",
+            stars=4.1,
+            review_count=60,
+            city="Philadelphia",
+            state="PA",
+            is_open=True,
+        )
+        self.business_4 = YelpBusiness.objects.create(
+            business_id="b4",
+            name="Delta BBQ",
+            categories="Restaurants, BBQ",
+            stars=4.0,
+            review_count=55,
+            city="Philadelphia",
+            state="PA",
+            is_open=True,
+        )
+        self.user_1 = User.objects.create(
+            username="user1",
+            password="secret123",
+            email="user1@example.com",
+            phone="13800138100",
+        )
+        self.user_2 = User.objects.create(
+            username="user2",
+            password="secret123",
+            email="user2@example.com",
+            phone="13800138101",
+        )
+        self.user_3 = User.objects.create(
+            username="user3",
+            password="secret123",
+            email="user3@example.com",
+            phone="13800138102",
+        )
+
+    def test_build_yelp_review_usercf_writes_ranked_recommendations(self) -> None:
+        ratings = [
+            (self.user_1, self.business_1, 5),
+            (self.user_1, self.business_2, 4),
+            (self.user_1, self.business_3, 2),
+            (self.user_2, self.business_1, 5),
+            (self.user_2, self.business_2, 4),
+            (self.user_2, self.business_3, 2),
+            (self.user_2, self.business_4, 5),
+            (self.user_3, self.business_1, 4),
+            (self.user_3, self.business_2, 5),
+            (self.user_3, self.business_3, 2),
+            (self.user_3, self.business_4, 4),
+        ]
+        for index, (user, business, stars) in enumerate(ratings, start=1):
+            YelpReview.objects.create(
+                review_id=f"r{index}",
+                business=business,
+                user=user,
+                stars=stars,
+                source="local",
+            )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "yelp_usercf.json"
+            call_command(
+                "build_yelp_review_usercf",
+                "--output",
+                str(output_path),
+                "--top-k",
+                "3",
+                "--similar-user-k",
+                "2",
+                "--min-user-reviews",
+                "2",
+                "--min-business-reviews",
+                "2",
+                "--min-common-items",
+                "2",
+            )
+
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(payload[str(self.user_1.id)][0]["business_id"], "b4")
+        self.assertGreater(payload[str(self.user_1.id)][0]["score"], 4.0)
+
+    def test_build_yelp_review_usercf_skips_when_filtered_interactions_are_empty(self) -> None:
+        YelpReview.objects.create(
+            review_id="r1",
+            business=self.business_1,
+            user=self.user_1,
+            stars=5,
+            source="local",
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "yelp_usercf.json"
+            call_command(
+                "build_yelp_review_usercf",
+                "--output",
+                str(output_path),
+                "--min-user-reviews",
+                "2",
+                "--min-business-reviews",
+                "2",
+            )
+
+            self.assertFalse(output_path.exists())
+
+    def test_build_yelp_review_usercf_uses_latest_review_per_user_business(self) -> None:
+        ratings = [
+            ("r1", self.user_1, self.business_1, 2),
+            ("r2", self.user_1, self.business_1, 5),
+            ("r3", self.user_1, self.business_2, 4),
+            ("r4", self.user_1, self.business_3, 2),
+            ("r5", self.user_2, self.business_1, 5),
+            ("r6", self.user_2, self.business_2, 4),
+            ("r7", self.user_2, self.business_3, 2),
+            ("r8", self.user_2, self.business_4, 5),
+            ("r9", self.user_3, self.business_1, 4),
+            ("r10", self.user_3, self.business_2, 5),
+            ("r11", self.user_3, self.business_3, 2),
+            ("r12", self.user_3, self.business_4, 4),
+        ]
+        for review_id, user, business, stars in ratings:
+            YelpReview.objects.create(
+                review_id=review_id,
+                business=business,
+                user=user,
+                stars=stars,
+                source="local",
+            )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "yelp_usercf.json"
+            call_command(
+                "build_yelp_review_usercf",
+                "--output",
+                str(output_path),
+                "--top-k",
+                "3",
+                "--similar-user-k",
+                "2",
+                "--min-user-reviews",
+                "2",
+                "--min-business-reviews",
+                "2",
+                "--min-common-items",
+                "2",
+            )
+
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(payload[str(self.user_1.id)][0]["business_id"], "b4")

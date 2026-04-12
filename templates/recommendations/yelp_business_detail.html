@@ -33,7 +33,7 @@
                 <p class="mb-3">{{ business.categories|default:"暂无分类信息" }}</p>
                 <div class="row text-muted">
                   <div class="col-md-4 mb-2">评论数：{{ business.review_count }}</div>
-                  <div class="col-md-4 mb-2">聚合评论：{{ business.aggregated_review_count }}</div>
+                  <div class="col-md-4 mb-2">站内已存评论：{{ business.aggregated_review_count }}</div>
                   <div class="col-md-4 mb-2">
                     状态：{% if business.is_open %}营业中{% else %}已关闭{% endif %}
                   </div>
@@ -50,14 +50,66 @@
               <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                   <div>
+                    <h4 class="card-title mb-1">提交评分</h4>
+                    <p class="text-muted small mb-0">站内登录用户可提交评分，可选填写评论文本</p>
+                  </div>
+                </div>
+                {% if current_user %}
+                  <form id="yelpReviewForm"
+                        action="{% url 'recommendations:submit_yelp_review' business.business_id %}"
+                        method="post"
+                        class="mb-0">
+                    {% csrf_token %}
+                    <div class="form-row">
+                      <div class="col-md-3 mb-3">
+                        <label for="reviewStars">评分</label>
+                        <select id="reviewStars" name="stars" class="form-control" required>
+                          <option value="">请选择</option>
+                          <option value="5">5 分</option>
+                          <option value="4">4 分</option>
+                          <option value="3">3 分</option>
+                          <option value="2">2 分</option>
+                          <option value="1">1 分</option>
+                        </select>
+                      </div>
+                      <div class="col-md-9 mb-3">
+                        <label for="reviewComment">评论</label>
+                        <textarea id="reviewComment"
+                                  name="comment"
+                                  class="form-control"
+                                  rows="3"
+                                  placeholder="可选，补充你的用餐评价"></textarea>
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between">
+                      <small class="text-muted">当前用户：{{ current_user.username }}</small>
+                      <button type="submit" class="btn btn-primary">提交评分</button>
+                    </div>
+                    <div id="reviewFeedback" class="small mt-3" style="display:none;"></div>
+                  </form>
+                {% else %}
+                  <div class="alert alert-light border mb-0">登录后可提交餐厅评分和评论。</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                  <div>
                     <h4 class="card-title mb-1">近期评论</h4>
-                    <p class="text-muted small mb-0">来自已导入的 Yelp 评论数据</p>
+                    <p class="text-muted small mb-0">同时展示导入 Yelp 评论与站内提交的评分评论</p>
                   </div>
                 </div>
                 {% for review in recent_reviews %}
                   <div class="border rounded p-3 mb-3">
                     <div class="d-flex justify-content-between mb-2">
-                      <strong>{{ review.user.username }}</strong>
+                      <div>
+                        <strong>{{ review.user.username }}</strong>
+                        <span class="badge {% if review.source == 'local' %}badge-soft-primary{% else %}badge-soft-secondary{% endif %} ml-2">
+                          {% if review.source == "local" %}站内{% else %}Yelp 导入{% endif %}
+                        </span>
+                      </div>
                       <span class="text-muted small">
                         {{ review.stars|floatformat:1 }}★
                         {% if review.review_date %}· {{ review.review_date|date:"Y-m-d H:i" }}{% endif %}
@@ -104,3 +156,29 @@
     </div>
   </div>
 {% endblock content %}
+{% block js %}
+  {{ block.super }}
+  {% if current_user %}
+    <script>
+      document.getElementById('yelpReviewForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const feedback = document.getElementById('reviewFeedback');
+        const formData = new FormData(this);
+        const response = await fetch(this.action, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        const data = await response.json();
+        feedback.style.display = 'block';
+        feedback.className = response.ok ? 'text-success small mt-3' : 'text-danger small mt-3';
+        feedback.textContent = data.message;
+        if (response.ok) {
+          window.location.reload();
+        }
+      });
+    </script>
+  {% endif %}
+{% endblock js %}

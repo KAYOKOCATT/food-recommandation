@@ -197,6 +197,61 @@ class YelpImportCommandTests(TestCase):
         self.assertEqual(YelpReview.objects.count(), 1)
         self.assertEqual(YelpBusiness.objects.get().aggregated_review_count, 1)
 
+    def test_import_yelp_data_keeps_multiple_reviews_for_same_user_and_business(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            data_dir = Path(temp_dir)
+            _write_jsonl(
+                data_dir / "yelp_academic_dataset_business.json",
+                [
+                    {
+                        "business_id": "b1",
+                        "name": "Alpha Sushi",
+                        "categories": "Restaurants, Sushi Bars",
+                        "stars": 4.5,
+                        "review_count": 12,
+                        "is_open": 1,
+                        "city": "Philadelphia",
+                        "state": "PA",
+                        "latitude": 1.0,
+                        "longitude": 2.0,
+                    }
+                ],
+            )
+            _write_jsonl(
+                data_dir / "yelp_academic_dataset_user.json",
+                [{"user_id": "u1", "name": "Yelp Alice"}],
+            )
+            _write_jsonl(
+                data_dir / "yelp_academic_dataset_review.json",
+                [
+                    {
+                        "review_id": "r1",
+                        "business_id": "b1",
+                        "user_id": "u1",
+                        "stars": 3,
+                        "text": "First visit.",
+                        "date": "2024-01-01 10:00:00",
+                    },
+                    {
+                        "review_id": "r2",
+                        "business_id": "b1",
+                        "user_id": "u1",
+                        "stars": 5,
+                        "text": "Second visit.",
+                        "date": "2024-02-01 10:00:00",
+                    },
+                ],
+            )
+
+            call_command("import_yelp_data", "--mode", "all", "--data-dir", str(data_dir))
+
+        self.assertEqual(YelpReview.objects.count(), 2)
+        self.assertEqual(
+            YelpReview.objects.filter(business__business_id="b1", user__external_user_id="u1").count(),
+            2,
+        )
+        self.assertEqual(YelpBusiness.objects.get().aggregated_review_count, 2)
+
 
 def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
     path.write_text(

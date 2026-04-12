@@ -10,7 +10,11 @@
 from django.urls import path
 
 from apps.recommendations.views.charts import ChartView
-from apps.recommendations.views.yelp import yelp_business_detail, yelp_business_list
+from apps.recommendations.views.yelp import (
+    submit_yelp_review,
+    yelp_business_detail,
+    yelp_business_list,
+)
 
 app_name = "recommendations"
 
@@ -22,6 +26,11 @@ urlpatterns = [
         "yelp/restaurants/<str:business_id>/",
         yelp_business_detail,
         name="yelp_business_detail",
+    ),
+    path(
+        "yelp/restaurants/<str:business_id>/review/",
+        submit_yelp_review,
+        name="submit_yelp_review",
     ),
     # 图表API
     path("charts/food-category-stats/", ChartView.food_category_stats, name="food_category_stats"),

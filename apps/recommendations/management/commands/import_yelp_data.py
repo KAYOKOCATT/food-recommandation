@@ -6,10 +6,10 @@ from typing import Any, Iterable
 
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Count
 from django.utils import timezone
 
 from apps.recommendations.models import YelpBusiness, YelpReview
+from apps.recommendations.services.yelp_service import YelpService
 from apps.recommendations.yelp_content import is_restaurant_business, iter_json_lines
 from apps.users.models import User
 
@@ -200,6 +200,7 @@ class Command(BaseCommand):
                     user_id=user_id,
                     stars=_safe_float(record.get("stars")),
                     text=str(record.get("text") or ""),
+                    source="yelp",
                     review_date=_parse_review_date(record.get("date")),
                 )
             )
@@ -210,7 +211,7 @@ class Command(BaseCommand):
         if batch:
             imported += self._upsert_reviews(batch)
 
-        self._refresh_aggregated_review_counts()
+        YelpService.refresh_aggregated_review_counts()
         skipped_total = (
             skipped_missing_review_id
             + skipped_missing_business
@@ -312,6 +313,7 @@ class Command(BaseCommand):
             current.user_id = item.user_id
             current.stars = item.stars
             current.text = item.text
+            current.source = item.source
             current.review_date = item.review_date
             updates.append(current)
 
@@ -320,19 +322,9 @@ class Command(BaseCommand):
         if updates:
             YelpReview.objects.bulk_update(
                 updates,
-                ["business", "user", "stars", "text", "review_date"],
+                ["business", "user", "stars", "text", "source", "review_date"],
             )
         return len(items)
-
-    @staticmethod
-    def _refresh_aggregated_review_counts() -> None:
-        counts = YelpReview.objects.values("business_id").annotate(total=Count("id"))
-        count_map = {row["business_id"]: row["total"] for row in counts}
-        businesses = list(YelpBusiness.objects.all())
-        for business in businesses:
-            business.aggregated_review_count = count_map.get(business.id, 0)
-        YelpBusiness.objects.bulk_update(businesses, ["aggregated_review_count"])
-
 
 def _build_yelp_username(external_user_id: str) -> str:
     return f"yelp_{external_user_id}"[:255]
