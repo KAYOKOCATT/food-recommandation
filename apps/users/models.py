@@ -23,11 +23,14 @@
     # 查询菜品
     foods = Foods.objects.filter(foodtype="dessert")
 """
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from django.db import models
 from django.db.models import Manager
 from django.utils.timezone import now
 from django.contrib.auth.hashers import make_password
+
+from config import settings
 
 
 class User(models.Model):
@@ -108,6 +111,32 @@ class User(models.Model):
         if not self.pk and not self.password.startswith('pbkdf2_'):
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
+
+    @property
+    def avatar_url(self) -> str:
+        """
+        获取用户头像URL
+        如果头像不存在或文件丢失，返回默认头像
+        """
+        # 检查是否有头像
+        if self.face:
+            try:
+                # 去掉开头的斜杠
+                clean_path = self.face.lstrip('/')
+                avatar_path = Path(settings.STATICFILES_DIRS[0]) / clean_path
+                
+                # 检查文件是否存在
+                if avatar_path.exists() and avatar_path.is_file():
+                    return self.face
+            except (OSError, AttributeError, ValueError):
+                pass  # 文件检查失败，使用默认头像
+        
+        # 返回默认头像
+        return self._get_default_avatar_url()
+    
+    def _get_default_avatar_url(self) -> str:
+        """获取默认头像URL"""
+        return '/picture/avatar-1.jpg'
 
     def __str__(self) -> str:
         return self.username

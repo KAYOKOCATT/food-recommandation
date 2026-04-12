@@ -92,21 +92,12 @@
                       data-toggle="dropdown"
                       aria-haspopup="true"
                       aria-expanded="false">
-                {% if user_info and user_info.face %}
-                  <img class="rounded-circle header-profile"
-                       src="{% static user_info.face %}"
-                       alt="Header Avatar"
-                       style="width: 36px;
-                              height: 36px;
-                              object-fit: cover">
-                {% else %}
-                  <img class="rounded-circle header-profile"
-                       src="{% static '/picture/avatar-1.jpg' %}"
-                       alt="Header Avatar"
-                       style="width: 36px;
-                              height: 36px;
-                              object-fit: cover">
-                {% endif %}
+                <img class="rounded-circle header-profile"
+                     src="{% static user_info.avatar_url %}"
+                     alt="Header Avatar"
+                     style="width: 36px;
+                            height: 36px;
+                            object-fit: cover">
                 <span class="d-none d-sm-inline-block ml-1">
                   {% if user_info %}
                     {{ user_info.username }}
@@ -141,7 +132,6 @@
                     <span>首页</span>
                   </a>
                 </li>
-                
                 <li class="menu-title">个人中心</li>
                 <li>
                   <a href="/api/v1/users/user_view" class=" waves-effect">
@@ -151,7 +141,6 @@
                     <span>个人中心</span>
                   </a>
                 </li>
-
                 <li>
                   <a href="/api/v1/users/change_password" class=" waves-effect">
                     <div class="d-inline-block icons-sm mr-1">
@@ -160,7 +149,6 @@
                     <span>修改密码</span>
                   </a>
                 </li>
-
                 <li>
                   <a href="/api/v1/charts/dashboard/" class="waves-effect">
                     <div class="d-inline-block icons-sm mr-1">
@@ -169,7 +157,6 @@
                     <span>数据可视化</span>
                   </a>
                 </li>
-                
                 <li class="menu-title">美食列表</li>
                 <li>
                   <a href="/api/v1/food_list" class=" waves-effect">

@@ -26,7 +26,6 @@ import json
 import re
 import os
 from json import JSONDecodeError
-from tkinter import N
 from typing import Optional, Union
 
 from django import forms
