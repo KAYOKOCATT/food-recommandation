@@ -17,6 +17,9 @@
 - `users.User` 已扩展 `source`、`external_user_id`，用于兼容 Yelp 导入用户。
 - Yelp 独立导入命令 `import_yelp_data` 已支持商家、用户、评论分阶段入库。
 - Yelp Web 页面已接入列表页、详情页和基于 `yelp_content_itemcf.json` 的相似餐厅推荐。
+- Yelp 餐厅详情页已支持登录后提交站内评分/评论，写入 `YelpReview(source="local")`。
+- Yelp 原始评论与站内评论已统一为“允许同一用户对同一餐厅多次评论”的记录语义。
+- Yelp 评分版 UserCF 离线命令 `build_yelp_review_usercf` 已完成，且在构建前按“每用户每餐厅最新一条评分”聚合。
 - Yelp 图表地理分布已迁移到 ORM 查询；运行时数据边界收敛为“数据库负责展示/统计，JSON 只负责离线相似度候选”。
 - Yelp 页面和相似度网络图已统一离线文件降级策略：文件缺失、JSON 损坏、候选商家不存在时返回空结果，不影响主页面渲染。
 
@@ -25,6 +28,8 @@
 - 中文菜品没有真实用户行为数据；收藏协同过滤只使用模拟隐式反馈做功能演示。
 - `collect_count/comment_count` 是爬取初始数 + 系统内新增行为的混合统计数，不作为真实推荐评估指标。
 - Yelp 餐厅数据可做内容推荐和基于 review 的 UserCF/ItemCF。
+- 当前只有本地用户名密码登录；尚未提供 Yelp 导入用户的演示登录入口。
+- 当前没有项目内独立管理员后台；Django 自带 `/admin/` 不是后续主线展示入口。
 - 不引入 Redis；先用离线文件/数据库 + Python 内存缓存。
 - 不继续扩大 Alpine/HTMX 前端架构，后续重点是核心数据处理和推荐算法。
 - 当前存在“数据库 + 离线 JSON”双数据源模式，维护时要优先降低耦合和不一致风险。
@@ -33,12 +38,22 @@
 
 ### P2：推进 Yelp 协同过滤主线
 
-- 基于 `YelpReview(stars)` 构造 user-business 矩阵，实现 Yelp ItemCF / UserCF 的离线 Top-K 召回。
-- 保持和现有内容推荐一致的产物形式，优先输出离线 JSON 并复用现有缓存加载机制。
-- 设计 Yelp 内容推荐与协同过滤的职责分工：
+- 保持 Yelp 内容推荐与协同过滤的职责分工：
   - 相似餐厅继续保留内容推荐。
-  - “为你推荐”优先接入 review-based CF 候选。
-- 在接入页面前先明确冷启动、无历史行为、候选为空时的降级策略。
+  - “为你推荐”优先接入 `yelp_usercf.json` 这类 review-based CF 候选。
+- 规划并实现 Yelp 导入用户的“演示型免密登录”入口，用于展示推荐效果。
+- 为 Yelp 推荐入口补全冷启动、无历史行为、候选为空时的降级策略与页面文案。
+- 视页面入口需要，再决定是否继续补 Yelp 评分版 ItemCF。
+
+### P2.5：补齐登录与后台展示链路
+
+- 增加 Yelp 演示登录入口：从 `source="yelp"` 的用户中选择账号后直接建立 session。
+- 增加管理员演示登录入口：固定使用 `User` 表第一条记录作为管理员身份。
+- 增加项目内独立管理员面板，第一版覆盖业务表 CRUD：
+  - `User`
+  - `Foods` / `Collect` / `Comment`
+  - `YelpBusiness` / `YelpReview`
+- 明确普通用户、Yelp 演示用户、管理员三类 session 身份及访问边界。
 
 ### P3：中文菜品侧进入维护模式
 
@@ -53,7 +68,7 @@
 
 - 更新 README 与 TODO 的对应关系，确保“当前路线、已完成能力、下一阶段重点”一致。
 - 增补一份维护文档，明确哪些页面依赖数据库，哪些功能依赖离线 JSON 产物。
-- 为 `import_yelp_data`、`build_yelp_content_recs`、`build_food_collect_cf`、`generate_demo_collects` 补充运行顺序、输入前提和产物说明。
+- 为 `import_yelp_data`、`build_yelp_content_recs`、`build_yelp_review_usercf`、`build_food_collect_cf`、`generate_demo_collects` 补充运行顺序、输入前提和产物说明。
 - 在文档中明确 synthetic 数据的用途边界，不作为真实推荐效果证明。
 
 ### 数据与离线产物治理
@@ -86,7 +101,7 @@
 
 ## 近期建议执行顺序
 
-1. 先完成 Yelp 图表/页面的数据源收口，减少双数据源维护成本。
-2. 再补 Yelp 页面、导入命令和中文菜品交互的回归测试。
-3. 之后实现 Yelp review-based ItemCF / UserCF 离线召回。
-4. 最后根据行为数据和页面入口情况，决定是否开放 Yelp “为你推荐”。
+1. 先实现 Yelp 演示登录与管理员演示登录，补齐三类身份入口。
+2. 再实现项目内独立管理员面板，先覆盖核心业务表 CRUD。
+3. 之后把 Yelp “为你推荐”接到页面入口，复用 `yelp_usercf.json`。
+4. 最后根据展示效果和业务需要，决定是否继续补 Yelp 评分版 ItemCF 或实时推荐入口。
