@@ -343,10 +343,7 @@ def change_password(request):
 
 
 def admin_home(request: HttpRequest) -> HttpResponse:
-    identity = require_identity(request, allow_admin=True)
-    if isinstance(identity, HttpResponse):
-        return identity
-    return render(request, "auth/admin_home.html", {"admin_user": identity.user})
+    return redirect("admin_home")
 
 
 def _get_yelp_demo_users() -> list[User]:

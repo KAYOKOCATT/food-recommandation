@@ -5,10 +5,12 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
+from django.contrib.auth.hashers import check_password
 from django.db import connection
 from django.test import Client, TestCase
 from django.test.utils import CaptureQueriesContext
 
+from apps.foods.models import Collect, Comment, Foods
 from apps.recommendations.models import YelpBusiness, YelpReview
 from apps.recommendations.services.yelp_service import YelpService
 from apps.users.demo_candidates import YelpDemoCandidate
@@ -172,3 +174,147 @@ class AuthFlowTests(TestCase):
         all_labels = [item["label"] for section in nav_menu for item in section["items"]]
         self.assertIn("Yelp 为你推荐", all_labels)
         self.assertNotIn("个人中心", all_labels)
+
+
+class AdminCrudTests(TestCase):
+    def setUp(self) -> None:
+        self.client = Client()
+        self.admin_user = User.objects.create(
+            username="admin-user",
+            password="secret123",
+            email="admin@example.com",
+            phone="13800138111",
+        )
+        self.local_user = User.objects.create(
+            username="normal-user",
+            password="secret123",
+            email="normal@example.com",
+            phone="13800138112",
+        )
+        self.food = Foods.objects.create(
+            foodname="宫保鸡丁",
+            foodtype="川菜",
+            recommend="经典川菜",
+            imgurl="/static/image/test.jpg",
+            price="38.50",
+        )
+        self.business = YelpBusiness.objects.create(
+            business_id="admin-b1",
+            name="Admin Sushi",
+            categories="Restaurants, Sushi Bars",
+            stars=4.5,
+            review_count=10,
+            city="Seattle",
+            state="WA",
+            is_open=True,
+        )
+
+    def _login_admin(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.admin_user.id
+        session["auth_role"] = "admin"
+        session["login_source"] = "admin_demo"
+        session["is_demo_login"] = True
+        session.save()
+
+    def test_admin_dashboard_renders_links(self) -> None:
+        self._login_admin()
+
+        response = self.client.get("/api/v1/admin/home/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "管理员后台")
+        self.assertContains(response, "用户")
+        self.assertContains(response, "菜品")
+
+    def test_local_user_cannot_access_admin_list(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.local_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "local"
+        session["is_demo_login"] = False
+        session.save()
+
+        response = self.client.get("/api/v1/admin/users/")
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_can_create_user_with_hashed_password(self) -> None:
+        self._login_admin()
+
+        response = self.client.post(
+            "/api/v1/admin/users/create/",
+            {
+                "username": "created-user",
+                "password": "plain-secret",
+                "email": "created@example.com",
+                "phone": "13800138113",
+                "info": "note",
+                "face": "",
+                "source": "local",
+                "external_user_id": "",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        created = User.objects.get(username="created-user")
+        self.assertTrue(check_password("plain-secret", created.password))
+        self.assertContains(response, "用户已保存")
+
+    def test_admin_collect_create_syncs_food_collect_count(self) -> None:
+        self._login_admin()
+
+        response = self.client.post(
+            "/api/v1/admin/collects/create/",
+            {"user": self.local_user.id, "food": self.food.id},
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.food.refresh_from_db()
+        self.assertEqual(Collect.objects.count(), 1)
+        self.assertEqual(self.food.collect_count, 1)
+
+    def test_admin_comment_delete_syncs_food_comment_count(self) -> None:
+        self._login_admin()
+        comment = Comment.objects.create(
+            uid=self.local_user.id,
+            fid=self.food.id,
+            realname=self.local_user.username,
+            content="好吃",
+        )
+        self.food.comment_count = 1
+        self.food.save(update_fields=["comment_count"])
+
+        response = self.client.post(
+            f"/api/v1/admin/comments/{comment.id}/delete/",
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.food.refresh_from_db()
+        self.assertEqual(Comment.objects.count(), 0)
+        self.assertEqual(self.food.comment_count, 0)
+
+    def test_admin_can_create_yelp_review(self) -> None:
+        self._login_admin()
+
+        response = self.client.post(
+            "/api/v1/admin/yelp-reviews/create/",
+            {
+                "review_id": "admin-review-1",
+                "business": self.business.id,
+                "user": self.local_user.id,
+                "stars": "4.0",
+                "text": "后台录入评论",
+                "source": "admin",
+                "review_date": "2026-04-13T10:30",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        review = YelpReview.objects.get(review_id="admin-review-1")
+        self.assertEqual(review.user_id, self.local_user.id)
+        self.assertEqual(review.business_id, self.business.id)

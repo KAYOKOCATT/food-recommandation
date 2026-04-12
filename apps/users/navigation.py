@@ -17,6 +17,9 @@ def build_navigation(identity: SessionIdentity) -> list[dict[str, Any]]:
                 "管理入口",
                 [
                     _item("admin_home", "后台首页", "uim uim-airplay"),
+                    _item("admin_user_list", "用户与认证", "uim uim-user"),
+                    _item("admin_food_list", "中文菜品", "uim uim-schedule"),
+                    _item("admin_yelp_business_list", "Yelp 数据", "uim uim-store"),
                 ],
             ),
         ]

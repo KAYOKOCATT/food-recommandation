@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="page-content">
+    <div class="page-title-box">
+      <div class="container-fluid">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h4 class="page-title mb-1">{% if is_edit %}编辑{% else %}新增{% endif %}{{ resource_label }}</h4>
+            <ol class="breadcrumb m-0">
+              <li class="breadcrumb-item">{{ menu_group }}</li>
+              <li class="breadcrumb-item"><a href="{{ list_url }}">{{ resource_label }}管理</a></li>
+              <li class="breadcrumb-item active">{% if is_edit %}编辑{% else %}新增{% endif %}</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-content-wrapper">
+      <div class="container-fluid">
+        <div class="card">
+          <div class="card-body">
+            <form method="post">
+              {% csrf_token %}
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+              {% endif %}
+              <div class="row">
+                {% for field in form %}
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                      {{ field }}
+                      {% if field.help_text %}
+                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                      {% endif %}
+                      {% for error in field.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+              <button type="submit" class="btn btn-primary mr-2">保存</button>
+              <a href="{{ list_url }}" class="btn btn-light">返回列表</a>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
