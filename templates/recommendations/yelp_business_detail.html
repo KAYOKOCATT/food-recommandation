@@ -1,0 +1,106 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="page-content">
+    <div class="page-title-box">
+      <div class="container-fluid">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h4 class="page-title mb-1">{{ business.name }}</h4>
+            <ol class="breadcrumb m-0">
+              <li class="breadcrumb-item"><a href="/api/v1/user_index">主页</a></li>
+              <li class="breadcrumb-item">
+                <a href="{% url 'recommendations:yelp_business_list' %}">Yelp 餐厅</a>
+              </li>
+              <li class="breadcrumb-item active">{{ business.name }}</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-content-wrapper">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-xl-8">
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between mb-3">
+                  <div>
+                    <h3 class="mb-1">{{ business.name }}</h3>
+                    <p class="text-muted mb-0">{{ business.city }}, {{ business.state }}</p>
+                  </div>
+                  <span class="badge badge-primary p-2">{{ business.stars|floatformat:1 }}★</span>
+                </div>
+                <p class="mb-3">{{ business.categories|default:"暂无分类信息" }}</p>
+                <div class="row text-muted">
+                  <div class="col-md-4 mb-2">评论数：{{ business.review_count }}</div>
+                  <div class="col-md-4 mb-2">聚合评论：{{ business.aggregated_review_count }}</div>
+                  <div class="col-md-4 mb-2">
+                    状态：{% if business.is_open %}营业中{% else %}已关闭{% endif %}
+                  </div>
+                </div>
+                {% if business.latitude and business.longitude %}
+                  <p class="small text-muted mb-0">
+                    坐标：{{ business.latitude|floatformat:4 }}, {{ business.longitude|floatformat:4 }}
+                  </p>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                  <div>
+                    <h4 class="card-title mb-1">近期评论</h4>
+                    <p class="text-muted small mb-0">来自已导入的 Yelp 评论数据</p>
+                  </div>
+                </div>
+                {% for review in recent_reviews %}
+                  <div class="border rounded p-3 mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                      <strong>{{ review.user.username }}</strong>
+                      <span class="text-muted small">
+                        {{ review.stars|floatformat:1 }}★
+                        {% if review.review_date %}· {{ review.review_date|date:"Y-m-d H:i" }}{% endif %}
+                      </span>
+                    </div>
+                    <p class="mb-0">{{ review.text|default:"该评论没有文本内容。" }}</p>
+                  </div>
+                {% empty %}
+                  <div class="alert alert-light border mb-0">当前餐厅暂无可展示的评论。</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-4">
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                  <div>
+                    <h4 class="card-title mb-1">相似餐厅推荐</h4>
+                    <p class="text-muted small mb-0">基于离线 TF-IDF 内容相似度</p>
+                  </div>
+                </div>
+                {% for item in similar_businesses %}
+                  <a class="d-block border rounded p-3 mb-3 text-reset"
+                     href="{% url 'recommendations:yelp_business_detail' item.business.business_id %}">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <div>
+                        <h5 class="mb-1">{{ item.business.name }}</h5>
+                        <p class="text-muted small mb-1">{{ item.business.city }}, {{ item.business.state }}</p>
+                        <p class="text-muted small mb-0">{{ item.business.categories|truncatechars:80 }}</p>
+                      </div>
+                      <span class="badge badge-soft-success">{{ item.score|floatformat:2 }}</span>
+                    </div>
+                  </a>
+                {% empty %}
+                  <div class="alert alert-light border mb-0">当前餐厅暂无相似推荐。</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

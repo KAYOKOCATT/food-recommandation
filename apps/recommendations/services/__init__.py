@@ -10,11 +10,17 @@ from apps.recommendations.services.similarity import (
     rerank_from_recent_items,
     similarity_cache,
 )
+from apps.recommendations.services.yelp_service import (
+    YelpBusinessRecommendation,
+    YelpService,
+)
 
 __all__ = [
     "ChartService",
     "RecommendationCandidate",
     "SimilarityCache",
+    "YelpBusinessRecommendation",
+    "YelpService",
     "rerank_from_recent_items",
     "similarity_cache",
 ]

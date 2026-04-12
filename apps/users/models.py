@@ -25,6 +25,7 @@
 """
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
 from django.db import models
 from django.db.models import Manager
 from django.utils.timezone import now
@@ -77,11 +78,13 @@ class User(models.Model):
 
     username = models.CharField(max_length=255, verbose_name="用户名", unique=True)
     password = models.CharField(max_length=255, verbose_name="密码")
-    email = models.CharField(unique=True, max_length=100)
-    phone = models.CharField(unique=True, max_length=11)
+    email = models.CharField(max_length=100, null=True, blank=True)
+    phone = models.CharField(max_length=11, null=True, blank=True)
     info = models.TextField(max_length=255, null=True, blank=True)
     face = models.CharField(max_length=255, blank=True, null=True)
     regtime = models.DateTimeField(default=now, db_index=True)
+    source = models.CharField(max_length=20, default="local", db_index=True)
+    external_user_id = models.CharField(max_length=64, null=True, blank=True, db_index=True)
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         """
@@ -108,7 +111,9 @@ class User(models.Model):
         """
 
         # 自动加密密码
-        if not self.pk and not self.password.startswith('pbkdf2_'):
+        if not self.pk and not (
+            self.password.startswith('pbkdf2_') or self.password.startswith("!")
+        ):
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
 

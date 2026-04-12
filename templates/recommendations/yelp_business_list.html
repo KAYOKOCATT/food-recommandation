@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="page-content">
+    <div class="page-title-box">
+      <div class="container-fluid">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h4 class="page-title mb-1">Yelp 餐厅推荐</h4>
+            <ol class="breadcrumb m-0">
+              <li class="breadcrumb-item"><a href="/api/v1/user_index">主页</a></li>
+              <li class="breadcrumb-item active">Yelp 餐厅</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-content-wrapper">
+      <div class="container-fluid">
+        <div class="card">
+          <div class="card-body">
+            <form class="mb-4" method="get">
+              <div class="form-row">
+                <div class="col-md-6 mb-2">
+                  <input class="form-control"
+                         type="text"
+                         name="q"
+                         value="{{ search_query }}"
+                         placeholder="搜索餐厅、分类、城市或州">
+                </div>
+                <div class="col-md-4 mb-2">
+                  <input class="form-control"
+                         type="text"
+                         name="city"
+                         value="{{ selected_city }}"
+                         placeholder="按城市筛选">
+                </div>
+                <div class="col-md-2 mb-2">
+                  <button class="btn btn-primary btn-block" type="submit">搜索</button>
+                </div>
+              </div>
+            </form>
+
+            <div class="row">
+              {% for business in page_obj %}
+                <div class="col-xl-4 col-md-6">
+                  <div class="card border mb-4 shadow-sm h-100">
+                    <div class="card-body">
+                      <div class="d-flex align-items-start justify-content-between mb-2">
+                        <div>
+                          <h5 class="mb-1">
+                            <a href="{% url 'recommendations:yelp_business_detail' business.business_id %}">
+                              {{ business.name }}
+                            </a>
+                          </h5>
+                          <p class="text-muted mb-0">{{ business.city }}, {{ business.state }}</p>
+                        </div>
+                        <span class="badge badge-soft-primary">{{ business.stars|floatformat:1 }}★</span>
+                      </div>
+                      <p class="text-muted small mb-2">{{ business.categories|default:"暂无分类" }}</p>
+                      <div class="d-flex justify-content-between small">
+                        <span>评论数 {{ business.review_count }}</span>
+                        <span>{% if business.is_open %}营业中{% else %}已关闭{% endif %}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% empty %}
+                <div class="col-12">
+                  <div class="alert alert-light border mb-0">暂无可展示的 Yelp 餐厅数据。</div>
+                </div>
+              {% endfor %}
+            </div>
+
+            {% if page_obj.paginator.num_pages > 1 %}
+              <nav>
+                <ul class="pagination mb-0">
+                  {% if page_obj.has_previous %}
+                    <li class="page-item">
+                      <a class="page-link"
+                         href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&city={{ selected_city }}">上一页</a>
+                    </li>
+                  {% endif %}
+                  <li class="page-item active">
+                    <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                  </li>
+                  {% if page_obj.has_next %}
+                    <li class="page-item">
+                      <a class="page-link"
+                         href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&city={{ selected_city }}">下一页</a>
+                    </li>
+                  {% endif %}
+                </ul>
+              </nav>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

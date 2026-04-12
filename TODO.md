@@ -13,6 +13,10 @@
 - 演示收藏数据生成命令和中文菜品协同过滤离线 JSON 生成命令。
 - 菜品表统计字段：`collect_count`、`comment_count`，用于热门排序和展示。
 - Yelp TF-IDF 内容推荐离线脚本，输出相似餐厅 JSON 和餐厅元数据 JSON。
+- Yelp 数据模型：`YelpBusiness`、`YelpReview` 已加入 ORM。
+- `users.User` 已扩展 `source`、`external_user_id`，用于兼容 Yelp 导入用户。
+- Yelp 独立导入命令 `import_yelp_data` 已支持商家、用户、评论分阶段入库。
+- Yelp Web 页面已接入列表页、详情页和基于 `yelp_content_itemcf.json` 的相似餐厅推荐。
 
 ### 当前约束
 
@@ -24,7 +28,8 @@
 
 ### 下一步
 
-1. 基于 Yelp review 评分构造 user-business 矩阵，实现 ItemCF 和 UserCF 的 Top-K 召回。
-2. 在 Django 页面中增加中文菜品推荐展示入口，接入 `food_itemcf.json` 或 `food_usercf.json`。
-3. 在列表页/详情页展示 `collect_count/comment_count`，让热门排序依据可见。
-4. 补登录、注册、收藏、评论、ItemCF/UserCF 和推荐重排的自动化测试。
+1. Phase 2 收尾：将 Yelp 图表数据源逐步从 JSON 文件读取迁移到 ORM 查询，减少双数据源维护成本。
+2. Phase 2 收尾：补充 Yelp 页面筛选、分页边界和导入命令的更多自动化测试。
+3. Phase 3：基于 Yelp review 评分构造 user-business 矩阵，实现 ItemCF 和 UserCF 的 Top-K 召回。
+4. Phase 3：决定 Yelp 用户行为是否接入收藏、浏览历史或评分重排，再开放“为你推荐”入口。
+5. 中文菜品侧：继续补列表页/详情页统计展示与登录、注册、收藏、评论、推荐重排的回归测试。
