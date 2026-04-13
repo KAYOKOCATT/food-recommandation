@@ -1,5 +1,7 @@
 # 笔记
 
+> 说明：本文件主要记录推荐系统理论学习、算法理解和评测方法，不作为当前 Django 项目的成品实现文档。项目现状、运行方式与工程结构请以 `README.md` 为准。
+
 ## 引入
 
 生活案例：京东电商推荐、社交媒体推荐、广告推荐等。
@@ -979,11 +981,6 @@ KNN 是推荐系统的基石算法之一：
 
 **关键改进**：实际推荐中通常不用原始距离，而是用**余弦相似度**或**皮尔逊相关系数**来衡量用户/物品的相似性。
 
-我来先搜索一些美食推荐系统的实际案例和算法选择策略，确保内容有依据。
-基于搜索结果及前文风格，我为你重新撰写"推荐详解"章节。这一章将先通过**全景对比表**厘清算法本质差异，再以**美食推荐系统**为例，具体阐述四种推荐策略（热门统计、离线、实时、基于内容）的选型逻辑与混合架构。
-
----
-
 ## 推荐总结
 
 ### 算法核心区别总览
@@ -1028,89 +1025,12 @@ flowchart LR
     Pop --> Hybrid
 ```
 
-基于你的**四个横向列表**架构和已掌握的TF-IDF/ALS原理，下一步的**工程实施路线图**如下：
+结合当前仓库的最终实现，更贴近工程现实的取舍是：
 
----
-
-### 第一步：建立"四通道"的代码骨架（本周完成）
-
-按你的四个列表建立**独立可插拔的模块**，不要一开始就做融合：
-
-```python
-# src/channels/ 目录结构（替代之前的复杂层级）
-channels/
-├── statistical.py      # 统计推荐：热门商家、高评分、新品
-├── content_based.py    # 基于内容：TF-IDF（已学原理直接落地）
-├── item_cf.py          # ItemCF：先做这个（比UserCF适合美食场景）
-└── realtime.py         # 实时：Session-based（最近浏览相似品）
-```
-
-**为什么要先分通道？** 四个列表独立上线，通过AB测试看哪个频道点击率高，再决定融合权重。
-
----
-
-### 第二步：数据清洗与特征准备（关键基础）
-
-Yelp数据需要为四个通道准备不同的输入：
-
-```python
-# 处理Yelp原始数据的优先级（建议顺序）
-1. business.json → 提取 categories（美食标签）、stars（评分）、review_count（热度）
-2. review.json → 构建 user-item 交互矩阵（为ItemCF准备）
-3. checkin.json → 实时热度的信号（统计推荐用）
-```
-
-**具体下一步操作**：写 `data/prepare_4channels.py`，输出四个文件：
-- `hot_businesses.json`（统计通道：按review_count+stars排序）
-- `item_profiles.json`（内容通道：TF-IDF向量，用你已学的原理）
-- `item_similarity_matrix.pkl`（ItemCF通道：余弦相似度矩阵）
-- `user_recent_views.json`（实时通道：最近5条浏览记录）
-
----
-
-### 第三步：分阶段上线顺序（不要同时做）
-
-按业务价值优先级实现，**下一个就做ItemCF**：
-
-| 顺序 | 通道 | 原因 | 技术点 |
-|------|------|------|--------|
-| **1** | **统计推荐** | 零成本上线，冷启动兜底 | 简单SQL排序 |
-| **2** | **ItemCF** | 美食场景Item比User稳定（菜品相似度永恒） | 共现矩阵+余弦相似（比ALS简单） |
-| **3** | **基于内容** | 用你已学的TF-IDF解决新商家冷启动 | categories转标签向量 |
-| **4** | **UserCF/ALS** | 延后：需要大量计算，且美食口味个体差异大，UserCF效果常不如ItemCF | 矩阵分解（你已学原理，工程复杂） |
-| **5** | **实时** | 最后做：需要Redis+流处理 | Session相似度 |
-
-**建议**：先实现前三个通道的**静态JSON接口**，验证数据质量后再加实时层。
-
----
-
-### 第四步：混合策略的工程落地（关键）
-
-不要写复杂的加权算法，先用**规则路由**实现"互补"：
-
-```python
-# 混合逻辑：按用户状态选择通道（简单有效）
-def recommend(user_id, context):
-    # 1. 冷启动用户 → 统计推荐（热门）+ 基于内容（地理位置过滤）
-    if is_new_user(user_id):
-        return mix(hot_channel.get(city=context['city']), 
-                   content_channel.get_by_location(context['lat_lon']))
-    
-    # 2. 有历史但无实时行为 → ItemCF（相似菜品）
-    elif not context['realtime_action']:
-        return item_cf_channel.get_similar_to_history(user_id, top_k=20)
-    
-    # 3. 正在浏览（有实时行为）→ ItemCF + 实时频道（相似于当前浏览）
-    else:
-        current_item = context['current_viewing']
-        similar_items = item_cf_channel.get_similar(current_item)
-        realtime_boost = realtime_channel.get_by_session(user_id)
-        return interleave(similar_items, realtime_boost)  # 交错融合
-```
-
-**工程建议**：先让四个通道**独立运行一周**，看数据表现，再决定融合策略。不要预设权重。
-
----
+- 中文菜品链路先保证业务闭环，用热门统计和基于收藏的演示型协同过滤支撑页面展示。
+- Yelp 链路优先做内容相似推荐，把大计算量放到离线构建命令里，在线只读取 JSON 候选。
+- 个性化推荐不在线重算用户相似度，而是读取用户最近评分行为，再对离线相似候选做轻量重排。
+- 评分版 UserCF 继续保留为离线实验能力，但不再作为主页面的核心依赖。
 
 ## 推荐详解
 
