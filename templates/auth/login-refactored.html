@@ -13,88 +13,55 @@
       margin: 0 auto;
     }
 
-    .login-combo {
+    .login-assist-inline {
       position: relative;
     }
 
-    .login-main-btn {
-      padding-right: 4.5rem;
+    .login-yelp-toggle {
+      width: 2.5rem;
+      border-left: 0;
+      color: #6c757d;
+      background: #f8fafc;
     }
 
-    .login-toggle-btn {
-      position: absolute;
-      top: 0.35rem;
-      right: 0.35rem;
-      bottom: 0.35rem;
-      width: 2.75rem;
-      border: 0;
-      border-left: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 0 0.25rem 0.25rem 0;
-      background: rgba(0, 0, 0, 0.08);
-      color: #fff;
-    }
-
-    .login-toggle-btn:hover,
-    .login-toggle-btn:focus {
-      background: rgba(0, 0, 0, 0.16);
-      color: #fff;
+    .login-yelp-toggle:hover,
+    .login-yelp-toggle:focus {
+      color: #495057;
+      background: #eef2f6;
       outline: none;
     }
 
-    .login-toggle-btn[disabled] {
-      cursor: not-allowed;
-      opacity: 0.75;
-    }
-
-    .login-assist-menu {
+    .login-yelp-menu {
       position: absolute;
-      top: calc(100% + 0.65rem);
+      top: calc(100% + 0.5rem);
       right: 0;
-      left: 0;
-      z-index: 30;
-      padding: 0.9rem;
-      border: 1px solid rgba(0, 0, 0, 0.06);
+      width: 280px;
+      padding: 0.75rem;
+      border: 1px solid #e9ecef;
       border-radius: 0.75rem;
       background: #fff;
-      box-shadow: 0 1rem 2rem rgba(15, 23, 42, 0.14);
-    }
-
-    .login-assist-trigger {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      padding: 0.8rem 0.9rem;
-      border: 1px solid #e9ecef;
-      border-radius: 0.65rem;
-      background: #fff;
-      color: #495057;
-      text-align: left;
-    }
-
-    .login-assist-trigger:hover,
-    .login-assist-trigger:focus {
-      border-color: #d6dbe1;
-      background: #f8f9fa;
-      color: #343a40;
-      outline: none;
-    }
-
-    .login-assist-trigger[disabled] {
-      background: #f8f9fa;
-      color: #adb5bd;
-      cursor: not-allowed;
-    }
-
-    .login-assist-panel {
-      margin-top: 0.75rem;
-      padding-top: 0.75rem;
-      border-top: 1px solid #eef1f4;
+      box-shadow: 0 0.85rem 1.5rem rgba(15, 23, 42, 0.12);
+      z-index: 20;
     }
 
     .login-assist-note {
       font-size: 0.85rem;
       color: #6c757d;
+    }
+
+    .login-mode-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.3rem 0.6rem;
+      border-radius: 999px;
+      background: #eef2f6;
+      color: #5b6570;
+      font-size: 0.78rem;
+      line-height: 1;
+    }
+
+    .login-disabled-input {
+      background: #f8f9fa;
     }
   </style>
 {% endblock extra_head %}
@@ -119,18 +86,111 @@
         <div class="col-xl-8 col-sm-10">
           <div class="card">
             <div class="card-body p-4">
-              <div class="p-2 login-shell"
-                   x-data="loginForm()"
-                   @click.away="closeAssistMenu()"
-                   @keydown.escape.window="closeAssistMenu()">
+              <div class="p-2 login-shell" x-data="loginForm()">
                 <div class="text-center mb-4">
                   <h5 class="mb-2">欢迎回来</h5>
                   <p class="text-muted mb-0">使用你的账户继续访问餐饮推荐系统。</p>
                 </div>
-                <form @submit.prevent="handleSubmit">
+                <form @submit.prevent="handleSubmit"
+                      @click.away="closeYelpPicker()"
+                      @keydown.escape.window="closeYelpPicker()">
                   {% csrf_token %}
-                  {% include "components/form-input.html" with field_name="username" field_type="text" field_placeholder="用户名" required="True" %}
-                  {% include "components/form-input.html" with field_name="password" field_type="password" field_placeholder="密码" required="True" %}
+                  <div class="form-group form-group-custom mb-3">
+                    <div class="login-assist-inline">
+                      <div class="input-group">
+                        <input type="text"
+                               class="form-control"
+                               :class="{
+                                 'is-invalid': errors.username,
+                                 'login-disabled-input': isDemoMode
+                               }"
+                               id="id_username"
+                               name="username"
+                               x-model="formData.username"
+                               @blur="validateField('username')"
+                               @focus="clearError('username')"
+                               :readonly="isDemoMode"
+                               required
+                               placeholder="用户名">
+                        <div class="input-group-append">
+                          <button class="btn btn-light login-yelp-toggle"
+                                  type="button"
+                                  @click.stop="toggleYelpPicker()"
+                                  :aria-expanded="isYelpPickerOpen.toString()"
+                                  aria-label="选择 Yelp 演示身份">
+                            <i class="mdi"
+                               :class="isYelpPickerOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'"></i>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="login-yelp-menu"
+                           x-show="isYelpPickerOpen"
+                           x-cloak
+                           x-transition:enter="transition ease-out duration-150"
+                           x-transition:enter-start="opacity-0 translate-y-1"
+                           x-transition:enter-end="opacity-100 translate-y-0"
+                           x-transition:leave="transition ease-in duration-120"
+                           x-transition:leave-start="opacity-100 translate-y-0"
+                           x-transition:leave-end="opacity-0 translate-y-1">
+                        <div class="login-assist-note mb-2">需要体验 Yelp 推荐时，从这里选择账号。</div>
+                        <select id="yelp-demo-user"
+                                class="form-control form-control-sm"
+                                x-ref="yelpUserSelect"
+                                x-model="formData.selectedYelpUser"
+                                @change="selectYelpUser()"
+                                :class="{ 'is-invalid': errors.selectedYelpUser }"
+                                {% if not yelp_demo_users %}disabled{% endif %}>
+                          <option value="">不使用 Yelp 演示身份</option>
+                          {% for user in yelp_demo_users %}
+                            <option value="{{ user.id }}" data-username="{{ user.username }}">
+                              {{ user.username }} · {{ user.review_count }} 条评论
+                            </option>
+                          {% endfor %}
+                        </select>
+                        {% if not yelp_demo_users %}
+                          <div class="login-assist-note mt-2">当前暂无可用 Yelp 演示账号。</div>
+                        {% endif %}
+                      </div>
+                    </div>
+                    <div class="invalid-feedback"
+                         x-show="errors.username"
+                         x-text="errors.username"></div>
+                    <div class="invalid-feedback d-block"
+                         x-show="errors.selectedYelpUser"
+                         x-text="errors.selectedYelpUser"></div>
+                  </div>
+                  <div class="mb-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                      <span class="login-mode-pill" x-text="loginModeLabel"></span>
+                    </div>
+                    <div class="mt-2"
+                         x-show="isDemoMode"
+                         x-cloak>
+                      <button class="btn btn-link btn-sm text-muted p-0"
+                              type="button"
+                              @click="useLocalLogin()">
+                        改回账号登录
+                      </button>
+                    </div>
+                  </div>
+                  <div class="form-group form-group-custom mb-4">
+                    <input type="password"
+                           class="form-control"
+                           :class="{
+                             'is-invalid': errors.password,
+                             'login-disabled-input': isDemoMode
+                           }"
+                           id="id_password"
+                           name="password"
+                           x-model="formData.password"
+                           @blur="validateField('password')"
+                           @focus="clearError('password')"
+                           :disabled="isDemoMode"
+                           :placeholder="passwordPlaceholder()">
+                    <div class="invalid-feedback"
+                         x-show="errors.password"
+                         x-text="errors.password"></div>
+                  </div>
                   <div class="row">
                     <div class="col-md-6">
                       {% include "components/form-checkbox.html" with field_name="remember" field_label="记住我" field_id="customControlInline" %}
@@ -143,84 +203,8 @@
                       </div>
                     </div>
                   </div>
-                  <div class="mt-4 login-combo">
-                    <button class="btn btn-success btn-block waves-effect waves-light login-main-btn"
-                            type="submit"
-                            :disabled="isSubmitting">
-                      <span x-show="!isSubmitting">登录</span>
-                      <span x-show="isSubmitting">
-                        <i class="mdi mdi-loading mdi-spin"></i>
-                        登录中...
-                      </span>
-                    </button>
-                    <button class="login-toggle-btn"
-                            type="button"
-                            @click.stop="toggleAssistMenu()"
-                            :aria-expanded="isAssistMenuOpen.toString()"
-                            :disabled="isSubmitting"
-                            aria-label="打开辅助登录菜单">
-                      <i class="mdi"
-                         :class="isAssistMenuOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'"></i>
-                    </button>
-                    <div class="login-assist-menu"
-                         x-show="isAssistMenuOpen"
-                         x-transition:enter="transition ease-out duration-150"
-                         x-transition:enter-start="opacity-0 translate-y-1"
-                         x-transition:enter-end="opacity-100 translate-y-0"
-                         x-transition:leave="transition ease-in duration-120"
-                         x-transition:leave-start="opacity-100 translate-y-0"
-                         x-transition:leave-end="opacity-0 translate-y-1">
-                      <p class="login-assist-note mb-3">需要演示身份时，可从这里进入。</p>
-                      <button class="login-assist-trigger"
-                              type="button"
-                              @click="toggleYelpPanel()"
-                              :disabled="{{ yelp_demo_users|length }} === 0">
-                        <span>
-                          <strong class="d-block text-dark">Yelp 演示身份</strong>
-                          <small class="text-muted">
-                            {% if yelp_demo_users %}
-                              选择导入的 Yelp 用户进入推荐页
-                            {% else %}
-                              当前暂无可用账号
-                            {% endif %}
-                          </small>
-                        </span>
-                        <i class="mdi"
-                           :class="showYelpPicker ? 'mdi-chevron-up' : 'mdi-chevron-down'"></i>
-                      </button>
-                      <div class="login-assist-panel" x-show="showYelpPicker" x-cloak>
-                        <div class="form-group mb-2">
-                          <label for="yelp-demo-user" class="mb-2">选择 Yelp 账号</label>
-                          <select id="yelp-demo-user"
-                                  class="form-control"
-                                  x-model="formData.selectedYelpUser"
-                                  {% if not yelp_demo_users %}disabled{% endif %}>
-                            <option value="">请选择演示账号</option>
-                            {% for user in yelp_demo_users %}
-                              <option value="{{ user.id }}">
-                                {{ user.username }} · {{ user.review_count }} 条评论
-                              </option>
-                            {% endfor %}
-                          </select>
-                        </div>
-                        <button class="btn btn-outline-primary btn-block"
-                                type="button"
-                                @click="loginYelpDemo"
-                                :disabled="isSubmitting || !formData.selectedYelpUser || {{ yelp_demo_users|length }} === 0">
-                          使用所选 Yelp 身份进入
-                        </button>
-                      </div>
-                      <button class="login-assist-trigger mt-3"
-                              type="button"
-                              @click="loginAdminDemo"
-                              :disabled="isSubmitting">
-                        <span>
-                          <strong class="d-block text-dark">管理员演示身份</strong>
-                          <small class="text-muted">使用系统中的第一条用户记录进入后台。</small>
-                        </span>
-                        <i class="mdi mdi-arrow-right"></i>
-                      </button>
-                    </div>
+                  <div class="mt-4">
+                    {% include "components/submit-button.html" with button_text="登录" button_loading_text="登录中..." button_class="btn-success" %}
                   </div>
                   <div class="mt-4 text-center">
                     <a href="{% url 'register' %}" class="text-muted">

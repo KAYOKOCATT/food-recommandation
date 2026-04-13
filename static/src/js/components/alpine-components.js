@@ -181,11 +181,7 @@ export function loginForm() {
       password: "",
       remember: false,
       selectedYelpUser: "",
-    },
-
-    validationRules: {
-      username: ["required", "username"],
-      password: ["required", "password"],
+      login_mode: "local",
     },
 
     submitUrl: config.apiBaseUrl + "/users/login/",
@@ -198,54 +194,93 @@ export function loginForm() {
 
   return {
     ...component,
-    isAssistMenuOpen: false,
-    showYelpPicker: false,
+    isYelpPickerOpen: false,
 
-    toggleAssistMenu() {
-      this.isAssistMenuOpen = !this.isAssistMenuOpen;
-      if (!this.isAssistMenuOpen) {
-        this.showYelpPicker = false;
+    get isDemoMode() {
+      return this.formData.login_mode === "yelp_demo";
+    },
+
+    get loginModeLabel() {
+      if (this.formData.login_mode === "yelp_demo") {
+        return "Yelp 演示身份";
       }
+      return "本地账号";
     },
 
-    closeAssistMenu() {
-      this.isAssistMenuOpen = false;
-      this.showYelpPicker = false;
+    toggleYelpPicker() {
+      this.isYelpPickerOpen = !this.isYelpPickerOpen;
     },
 
-    toggleYelpPanel() {
-      this.isAssistMenuOpen = true;
-      this.showYelpPicker = !this.showYelpPicker;
+    closeYelpPicker() {
+      this.isYelpPickerOpen = false;
     },
 
-    async loginYelpDemo() {
-      if (!this.formData.selectedYelpUser) {
-        this.showNotification("请选择 Yelp 演示账号", "warning");
-        return;
+    validateField(field) {
+      this.errors[field] = "";
+
+      if (field === "selectedYelpUser" && this.formData.login_mode === "yelp_demo") {
+        if (!this.formData.selectedYelpUser) {
+          this.errors.selectedYelpUser = "请选择 Yelp 演示账号";
+          return false;
+        }
+        return true;
       }
-      await this.submitDemoLogin("/api/v1/users/login/yelp-demo/", {
-        user_id: this.formData.selectedYelpUser,
-      });
-    },
 
-    async loginAdminDemo() {
-      await this.submitDemoLogin("/api/v1/users/login/admin-demo/", {});
-    },
-
-    async submitDemoLogin(url, payload) {
-      this.isSubmitting = true;
-      try {
-        const response = await post(url, payload);
-        this.closeAssistMenu();
-        redirectWithNotification(response, response.msg || "登录成功");
-      } catch (error) {
-        this.showNotification(
-          error.data?.msg || error.message || "登录失败",
-          "error"
-        );
-      } finally {
-        this.isSubmitting = false;
+      if (this.formData.login_mode === "local") {
+        return component.validateField.call(this, field);
       }
+
+      if (field === "username") {
+        if (!this.formData.username?.trim()) {
+          this.errors.username = "用户名不能为空";
+          return false;
+        }
+      }
+
+      return true;
+    },
+
+    validateForm() {
+      this.errors = {};
+
+      if (this.formData.login_mode === "yelp_demo") {
+        if (!this.formData.selectedYelpUser) {
+          this.errors.selectedYelpUser = "请选择 Yelp 演示账号";
+        }
+        if (!this.formData.username?.trim()) {
+          this.errors.username = "用户名不能为空";
+        }
+        return Object.keys(this.errors).length === 0;
+      }
+
+      return component.validateForm.call(this);
+    },
+
+    selectYelpUser() {
+      const selectedOption = this.$refs.yelpUserSelect?.selectedOptions?.[0];
+      const selectedLabel = selectedOption?.dataset?.username || selectedOption?.textContent?.trim();
+
+      this.formData.login_mode = this.formData.selectedYelpUser ? "yelp_demo" : "local";
+      this.formData.username = this.formData.selectedYelpUser ? (selectedLabel || "") : "";
+      this.formData.password = "";
+      this.closeYelpPicker();
+      this.clearError("selectedYelpUser");
+      this.clearError("username");
+      this.clearError("password");
+    },
+
+    useLocalLogin() {
+      this.resetForm();
+      this.formData.login_mode = "local";
+      this.formData.selectedYelpUser = "";
+      this.closeYelpPicker();
+    },
+
+    passwordPlaceholder() {
+      if (this.formData.login_mode === "yelp_demo") {
+        return "已选择 Yelp 演示身份，无需输入密码";
+      }
+      return "密码";
     },
 
     showNotification(message, type = "info", duration = 3000) {

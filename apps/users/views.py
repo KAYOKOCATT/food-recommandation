@@ -109,18 +109,36 @@ def login(request: HttpRequest) -> Union[JsonResponse, HttpResponse]:
 
     if request.method == 'POST':
         try:
-            data: dict[str, str] = json.loads(request.body)
+            data: dict[str, object] = json.loads(request.body)
         except JSONDecodeError:
             return api_response(code=4001, msg='请求体不是合法 JSON', data={}, status=400)
 
-        username: Optional[str] = data.get('username')
-        password: Optional[str] = data.get('password')
+        login_mode = str(data.get("login_mode") or "local")
+        username = str(data.get('username') or "")
+        password = str(data.get('password') or "")
+        selected_yelp_user = data.get("selectedYelpUser") or data.get("selected_yelp_user")
+
+        if login_mode == "yelp_demo" or selected_yelp_user:
+            return _login_yelp_demo_response(request, selected_yelp_user)
+
         if not username or not password:
             return api_response(code=4002, msg='用户名和密码不能为空', data={}, status=400)
 
         user: Optional[User] = User.objects.filter(username=username).first()
 
         if user and check_password(password, user.password):
+            if _is_first_user(user):
+                login_admin_user(request, user)
+                return api_response(
+                    code=200,
+                    msg='登录成功',
+                    data={
+                        'user_id': user.id,
+                        'username': user.username,
+                        'redirect': '/api/v1/admin/home/',
+                    },
+                )
+
             login_local_user(request, user)
             return api_response(
                 code=200,
@@ -148,48 +166,7 @@ def login_yelp_demo(request: HttpRequest) -> JsonResponse:
     except JSONDecodeError:
         return api_response(code=4001, msg='请求体不是合法 JSON', data={}, status=400)
 
-    user_id = data.get("user_id")
-    if not user_id:
-        return api_response(code=4002, msg="请选择 Yelp 演示账号", data={}, status=400)
-
-    user = User.objects.filter(
-        id=user_id,
-        source="yelp",
-        id__in=candidate_user_ids(),
-    ).first()
-    if user is None:
-        return api_response(code=4004, msg="该 Yelp 演示账号不可用", data={}, status=400)
-
-    login_yelp_demo_user(request, user)
-    return api_response(
-        code=200,
-        msg="Yelp 演示登录成功",
-        data={
-            "user_id": user.id,
-            "username": user.username,
-            "redirect": "/api/v1/yelp/recommendations/",
-        },
-    )
-
-
-def login_admin_demo(request: HttpRequest) -> JsonResponse:
-    if request.method != "POST":
-        return api_response(code=405, msg="请求方法不允许", data={}, status=405)
-
-    admin_user = User.objects.order_by("id").first()
-    if admin_user is None:
-        return api_response(code=5001, msg="当前没有可用管理员演示账号", data={}, status=503)
-
-    login_admin_user(request, admin_user)
-    return api_response(
-        code=200,
-        msg="管理员演示登录成功",
-        data={
-            "user_id": admin_user.id,
-            "username": admin_user.username,
-            "redirect": "/api/v1/admin/home/",
-        },
-    )
+    return _login_yelp_demo_response(request, data.get("user_id"))
 
 
 # ---------- 辅助函数：构建统一响应 ----------
@@ -397,3 +374,32 @@ def _default_redirect(identity) -> str:
     if identity.is_yelp_demo_user:
         return "recommendations:yelp_recommendations"
     return "user_home"
+
+
+def _login_yelp_demo_response(request: HttpRequest, user_id: object) -> JsonResponse:
+    if not user_id:
+        return api_response(code=4002, msg="请选择 Yelp 演示账号", data={}, status=400)
+
+    user = User.objects.filter(
+        id=user_id,
+        source="yelp",
+        id__in=candidate_user_ids(),
+    ).first()
+    if user is None:
+        return api_response(code=4004, msg="该 Yelp 演示账号不可用", data={}, status=400)
+
+    login_yelp_demo_user(request, user)
+    return api_response(
+        code=200,
+        msg="Yelp 演示登录成功",
+        data={
+            "user_id": user.id,
+            "username": user.username,
+            "redirect": "/api/v1/yelp/recommendations/",
+        },
+    )
+
+
+def _is_first_user(user: User) -> bool:
+    first_user_id = User.objects.order_by("id").values_list("id", flat=True).first()
+    return first_user_id == user.id

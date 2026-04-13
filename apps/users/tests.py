@@ -21,6 +21,12 @@ from apps.users.models import User
 class AuthFlowTests(TestCase):
     def setUp(self) -> None:
         self.client = Client()
+        self.admin_user = User.objects.create(
+            username="admin-user",
+            password="secret123",
+            email="admin@example.com",
+            phone="13800138010",
+        )
         self.local_user = User.objects.create(
             username="local-user",
             password="secret123",
@@ -88,6 +94,31 @@ class AuthFlowTests(TestCase):
         self.assertEqual(session["login_source"], "yelp_demo")
         self.assertTrue(session["is_demo_login"])
 
+    def test_unified_login_can_route_to_yelp_demo_session(self) -> None:
+        with patch("apps.users.views.candidate_user_ids", return_value={self.yelp_user.id}):
+            response = self.client.post(
+                "/api/v1/users/login/",
+                data=json.dumps(
+                    {
+                        "login_mode": "yelp_demo",
+                        "selectedYelpUser": self.yelp_user.id,
+                        "username": self.yelp_user.username,
+                        "password": "",
+                    }
+                ),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["data"]["redirect"], "/api/v1/yelp/recommendations/")
+
+        session = self.client.session
+        self.assertEqual(session["user_id"], self.yelp_user.id)
+        self.assertEqual(session["auth_role"], "user")
+        self.assertEqual(session["login_source"], "yelp_demo")
+        self.assertTrue(session["is_demo_login"])
+
     def test_yelp_demo_login_rejects_non_demo_user(self) -> None:
         with patch("apps.users.views.candidate_user_ids", return_value={self.yelp_user.id}):
             response = self.client.post(
@@ -119,15 +150,19 @@ class AuthFlowTests(TestCase):
         self.assertContains(response, self.yelp_user.username)
         self.assertFalse(any("COUNT(" in query["sql"] for query in queries.captured_queries))
 
-    def test_admin_demo_login_uses_first_user(self) -> None:
-        response = self.client.post("/api/v1/users/login/admin-demo/", data="{}", content_type="application/json")
+    def test_first_user_login_gets_admin_session(self) -> None:
+        response = self.client.post(
+            "/api/v1/users/login/",
+            data=json.dumps({"username": "admin-user", "password": "secret123"}),
+            content_type="application/json",
+        )
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertEqual(payload["data"]["redirect"], "/api/v1/admin/home/")
 
         session = self.client.session
-        self.assertEqual(session["user_id"], self.local_user.id)
+        self.assertEqual(session["user_id"], self.admin_user.id)
         self.assertEqual(session["auth_role"], "admin")
         self.assertEqual(session["login_source"], "admin_demo")
         self.assertTrue(session["is_demo_login"])
