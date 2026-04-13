@@ -42,31 +42,21 @@ def build_navigation(identity: SessionIdentity) -> list[dict[str, Any]]:
         ),
     ]
 
-    if identity.is_local_user:
+    if identity.is_local_user or identity.is_yelp_demo_user:
         items.insert(
             1,
             _section(
                 "个人中心",
                 [
                     _item("user_profile", "个人中心", "uim uim-document-layout-center"), # 类似个人信息卡片
-                    _item("usercf_recommendations", "为您推荐", "uim uim-favorite"), # 专属喜欢
                     _item("recommendations:yelp_recommendations", "Yelp 为你推荐", "uim uim-favorite"),
                     _item("change_password", "修改密码", "uim uim-lock"), # 锁/密码
                     _item("recommendations:dashboard", "数据可视化", "uim uim-chart-pie"), # 饼图
                 ],
             ),
         )
-    elif identity.is_yelp_demo_user:
-        items.insert(
-            1,
-            _section(
-                "演示入口",
-                [
-                    _item("recommendations:yelp_recommendations", "Yelp 为你推荐", "uim uim-favorite"), # 专属推荐
-                    _item("recommendations:dashboard", "数据可视化", "uim uim-chart-pie"),
-                ],
-            ),
-        )
+        if identity.is_local_user:
+            items[1]["items"].insert(1, _item("usercf_recommendations", "为您推荐", "uim uim-favorite"))
 
     return items
 

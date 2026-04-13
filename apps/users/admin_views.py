@@ -597,7 +597,7 @@ YELP_BUSINESS_CONFIG = ResourceConfig(
     delete_url_name="admin_yelp_business_delete",
     columns=[
         ("ID", lambda obj: str(obj.id)),
-        ("业务 ID", lambda obj: obj.business_id),
+        # ("业务 ID", lambda obj: obj.business_id),
         ("名称", lambda obj: obj.name),
         ("城市/州", lambda obj: f"{obj.city or '-'} / {obj.state or '-'}"),
         ("评分", lambda obj: f"{obj.stars}"),

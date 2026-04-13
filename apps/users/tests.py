@@ -33,6 +33,12 @@ class AuthFlowTests(TestCase):
             email="local@example.com",
             phone="13800138011",
         )
+        self.other_local_user = User.objects.create(
+            username="other-local-user",
+            password="secret123",
+            email="other-local@example.com",
+            phone="13800138015",
+        )
         self.yelp_user = User.objects.create(
             username="yelp-user",
             password="!",
@@ -51,12 +57,49 @@ class AuthFlowTests(TestCase):
             state="PA",
             is_open=True,
         )
+        self.food = Foods.objects.create(
+            foodname="麻婆豆腐",
+            foodtype="川菜",
+            recommend="麻辣鲜香",
+            imgurl="/static/image/test.jpg",
+            price="28.00",
+        )
+        self.other_food = Foods.objects.create(
+            foodname="扬州炒饭",
+            foodtype="主食",
+            recommend="粒粒分明",
+            imgurl="/static/image/test2.jpg",
+            price="18.00",
+        )
+        Collect.objects.create(user=self.yelp_user, food=self.food)
+        Collect.objects.create(user=self.other_local_user, food=self.other_food)
+        Comment.objects.create(
+            uid=self.yelp_user.id,
+            fid=self.food.id,
+            realname=self.yelp_user.username,
+            content="站内菜品评论",
+        )
+        Comment.objects.create(
+            uid=self.other_local_user.id,
+            fid=self.other_food.id,
+            realname=self.other_local_user.username,
+            content="别人的菜品评论",
+        )
         YelpReview.objects.create(
             review_id="r1",
             business=self.business,
             user=self.yelp_user,
             stars=5.0,
             source="yelp",
+            text="很棒的寿司",
+        )
+        YelpReview.objects.create(
+            review_id="r2",
+            business=self.business,
+            user=self.other_local_user,
+            stars=3.0,
+            source="local",
+            text="别人的餐厅评论",
         )
 
     def test_local_login_sets_session_metadata(self) -> None:
@@ -167,7 +210,7 @@ class AuthFlowTests(TestCase):
         self.assertEqual(session["login_source"], "admin_demo")
         self.assertTrue(session["is_demo_login"])
 
-    def test_yelp_demo_user_cannot_access_profile(self) -> None:
+    def test_yelp_demo_user_can_access_profile(self) -> None:
         session = self.client.session
         session["user_id"] = self.yelp_user.id
         session["auth_role"] = "user"
@@ -177,7 +220,80 @@ class AuthFlowTests(TestCase):
 
         response = self.client.get("/api/v1/users/profile/")
 
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "个人中心")
+        self.assertContains(response, "基本资料")
+        self.assertContains(response, "菜品收藏")
+        self.assertContains(response, "菜品评论")
+        self.assertContains(response, "餐厅评分评论")
+
+    def test_profile_collects_tab_only_shows_current_user_collects(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.yelp_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "yelp_demo"
+        session["is_demo_login"] = True
+        session.save()
+
+        response = self.client.get("/api/v1/users/profile/?tab=collects")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "菜品收藏表")
+        self.assertContains(response, "麻婆豆腐")
+        self.assertNotContains(response, "扬州炒饭")
+
+    def test_profile_comments_tab_only_shows_current_user_comments(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.yelp_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "yelp_demo"
+        session["is_demo_login"] = True
+        session.save()
+
+        response = self.client.get("/api/v1/users/profile/?tab=comments")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "菜品评论表")
+        self.assertContains(response, "站内菜品评论")
+        self.assertNotContains(response, "别人的菜品评论")
+
+    def test_profile_yelp_reviews_tab_only_shows_current_user_reviews(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.yelp_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "yelp_demo"
+        session["is_demo_login"] = True
+        session.save()
+
+        response = self.client.get("/api/v1/users/profile/?tab=yelp_reviews")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "餐厅评分评论表")
+        self.assertContains(response, "很棒的寿司")
+        self.assertNotContains(response, "别人的餐厅评论")
+
+    def test_profile_tab_pagination_links_preserve_tab(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.yelp_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "yelp_demo"
+        session["is_demo_login"] = True
+        session.save()
+
+        for index in range(12):
+            food = Foods.objects.create(
+                foodname=f"收藏菜品{index}",
+                foodtype="测试",
+                recommend="",
+                imgurl=f"/static/image/{index}.jpg",
+                price="10.00",
+            )
+            Collect.objects.create(user=self.yelp_user, food=food)
+
+        response = self.client.get("/api/v1/users/profile/?tab=collects")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "?tab=collects&collect_page=2")
 
     def test_admin_user_cannot_access_user_home(self) -> None:
         session = self.client.session
@@ -205,7 +321,69 @@ class AuthFlowTests(TestCase):
         nav_menu = response.context["nav_menu"]
         all_labels = [item["label"] for section in nav_menu for item in section["items"]]
         self.assertIn("Yelp 为你推荐", all_labels)
-        self.assertNotIn("个人中心", all_labels)
+        self.assertIn("个人中心", all_labels)
+        self.assertIn("修改密码", all_labels)
+
+    def test_yelp_demo_user_can_access_change_password_page(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.yelp_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "yelp_demo"
+        session["is_demo_login"] = True
+        session.save()
+
+        response = self.client.get("/api/v1/users/password/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "修改密码")
+        self.assertContains(response, "可直接设置新密码")
+
+    def test_yelp_demo_user_can_set_password_from_unusable_password(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.yelp_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "yelp_demo"
+        session["is_demo_login"] = True
+        session.save()
+
+        response = self.client.post(
+            "/api/v1/users/password/",
+            {
+                "current_password": "",
+                "new_password": "new-demo-secret",
+                "confirm_password": "new-demo-secret",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.yelp_user.refresh_from_db()
+        self.assertTrue(check_password("new-demo-secret", self.yelp_user.password))
+        self.assertContains(response, "密码修改成功")
+
+    def test_yelp_demo_user_can_update_profile(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.yelp_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "yelp_demo"
+        session["is_demo_login"] = True
+        session.save()
+
+        response = self.client.post(
+            "/api/v1/users/profile/",
+            {
+                "username": "yelp-user-updated",
+                "email": "updated@example.com",
+                "phone": "13800138099",
+                "info": "demo profile updated",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.yelp_user.refresh_from_db()
+        self.assertEqual(self.yelp_user.username, "yelp-user-updated")
+        self.assertEqual(self.yelp_user.email, "updated@example.com")
+        self.assertEqual(self.yelp_user.phone, "13800138099")
 
     def test_user_home_renders_wordcloud_cards(self) -> None:
         session = self.client.session

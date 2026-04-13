@@ -30,10 +30,14 @@ from typing import Optional, Union
 
 from django import forms
 from django.contrib.auth.hashers import check_password, make_password
+from django.core.paginator import Paginator
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from config import settings
 
+from apps.foods.models import Collect, Comment, Foods
+from apps.recommendations.models import YelpReview
 from apps.users.demo_candidates import (
     candidate_user_ids,
     load_yelp_demo_candidates,
@@ -291,11 +295,12 @@ def logout(request):
     return redirect('login')
 
 def user_view(request):
-    identity = require_identity(request, allow_local_user=True)
+    identity = require_identity(request, allow_local_user=True, allow_yelp_demo_user=True)
     if isinstance(identity, HttpResponse):
         return identity
 
     user = get_object_or_404(User, id=identity.user.id)
+    default_tab = "profile"
     
     if request.method == 'POST':
         user.username = request.POST.get('username')
@@ -315,27 +320,61 @@ def user_view(request):
             
             user.face ='/image/' + avatar.name
         user.save()
-        return redirect('user_profile')
+        return redirect(f"{reverse('user_profile')}?tab={default_tab}")
     
     else:
-        from_page =request.GET.get('fp',1)
-        return render(request, 'auth/user_view.html',{'user':user,'from_page':from_page})
+        active_tab = request.GET.get("tab", default_tab)
+        if active_tab not in {"profile", "collects", "comments", "yelp_reviews"}:
+            active_tab = default_tab
+
+        collects = Collect.objects.filter(user=user).select_related("food").order_by("-added_time")
+        collect_page_obj = Paginator(collects, 10).get_page(request.GET.get("collect_page", 1))
+
+        comments = list(Comment.objects.filter(uid=user.id).order_by("-ctime", "-id"))
+        food_map = Foods.objects.in_bulk([comment.fid for comment in comments])
+        food_comment_rows = [
+            {"comment": comment, "food": food_map.get(comment.fid)}
+            for comment in comments
+        ]
+        comment_page_obj = Paginator(food_comment_rows, 10).get_page(request.GET.get("comment_page", 1))
+
+        yelp_reviews = (
+            YelpReview.objects.filter(user=user)
+            .select_related("business")
+            .order_by("-review_date", "-id")
+        )
+        yelp_review_page_obj = Paginator(yelp_reviews, 10).get_page(request.GET.get("yelp_page", 1))
+
+        from_page = request.GET.get('fp', 1)
+        return render(
+            request,
+            'auth/user_view.html',
+            {
+                'user': user,
+                'from_page': from_page,
+                'active_tab': active_tab,
+                'collect_page_obj': collect_page_obj,
+                'comment_page_obj': comment_page_obj,
+                'yelp_review_page_obj': yelp_review_page_obj,
+            },
+        )
 
 def change_password(request):
-    identity = require_identity(request, allow_local_user=True)
+    identity = require_identity(request, allow_local_user=True, allow_yelp_demo_user=True)
     if isinstance(identity, HttpResponse):
         return identity
 
     user = get_object_or_404(User, id=identity.user.id)
     error_message = None
     success_message = None
+    allow_demo_reset = identity.is_yelp_demo_user and user.password.startswith("!")
     
     if request.method == 'POST':
         current_password = request.POST.get('current_password')
         new_password = request.POST.get('new_password')
         confirm_password = request.POST.get('confirm_password')
         
-        if not check_password(current_password, user.password):
+        if not allow_demo_reset and not check_password(current_password, user.password):
             error_message = '当前密码错误'
         elif new_password != confirm_password:
             error_message = '新密码与确认密码不一致'
@@ -343,8 +382,24 @@ def change_password(request):
             user.password = make_password(new_password)
             user.save()
             success_message = '密码修改成功'
-            return render(request,"auth/change_password.html",{'user':user,'success_message':success_message})
-    return render(request,"auth/change_password.html",{'user':user,'error_message':error_message})
+            return render(
+                request,
+                "auth/change_password.html",
+                {
+                    'user': user,
+                    'success_message': success_message,
+                    'allow_demo_reset': False,
+                },
+            )
+    return render(
+        request,
+        "auth/change_password.html",
+        {
+            'user': user,
+            'error_message': error_message,
+            'allow_demo_reset': allow_demo_reset,
+        },
+    )
 
 
 def admin_home(request: HttpRequest) -> HttpResponse:

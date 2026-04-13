@@ -2,7 +2,7 @@ from typing import Any
 
 from django.conf import settings
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db.models import F
+from django.db.models import F, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -20,9 +20,12 @@ def food_list(request) -> Any:
     foodtypes = Foods.objects.values("foodtype").distinct().order_by("foodtype")
     # 分类筛选
     selected_category = request.GET.get("category", 'all')
+    search_query = request.GET.get("q", "").strip()
 
     if selected_category != 'all':
         foodlist = foodlist.filter(foodtype=selected_category)
+    if search_query:
+        foodlist = foodlist.filter(Q(foodname__icontains=search_query))
 
     items_per_page = 18
     paginator = Paginator(foodlist, items_per_page)
@@ -43,6 +46,7 @@ def food_list(request) -> Any:
         "page_obj": page_obj,
         "foodtypes": foodtypes,
         "selected_category": selected_category,
+        "search_query": search_query,
     }
     return render(request, "auth/food_list.html", context)
 

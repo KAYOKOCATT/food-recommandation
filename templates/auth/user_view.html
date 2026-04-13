@@ -1,96 +1,235 @@
 {% extends 'layout.html' %}
 {% load static %}
 {% block content %}
-
     <div class="page-content">
-        <!-- 标题 -->
         <div class="page-title-box">
             <div class="container-fluid">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h4 class="page-title mb-1">用户详情</h4>
+                        <h4 class="page-title mb-1">个人中心</h4>
                         <ol class="breadcrumb m-0">
                             <li class="breadcrumb-item"><a href="{% url 'user_home' %}">首页</a></li>
-                            <li class="breadcrumb-item active">用户详情</li>
+                            <li class="breadcrumb-item active">个人中心</li>
                         </ol>
                     </div>
                 </div>
             </div>
         </div>
-        <!-- 内容 -->
         <div class="page-content-wrapper">
-            <div class="col-xl-12">
+            <div class="container-fluid">
                 <div class="card">
                     <div class="card-body">
-                        <section class="content" id="showcontent">
+                        <ul class="nav nav-tabs nav-tabs-custom mb-4" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link {% if active_tab == 'profile' %}active{% endif %}"
+                                   href="?tab=profile">基本资料</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if active_tab == 'collects' %}active{% endif %}"
+                                   href="?tab=collects">菜品收藏</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if active_tab == 'comments' %}active{% endif %}"
+                                   href="?tab=comments">菜品评论</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if active_tab == 'yelp_reviews' %}active{% endif %}"
+                                   href="?tab=yelp_reviews">餐厅评分评论</a>
+                            </li>
+                        </ul>
+
+                        {% if active_tab == 'profile' %}
                             <div class="row justify-content-center">
-                                <div class="col-md-6">
-                                    <div class="box box-primary">
-                                        <div class="box-header text-center">
-                                            <h3 class="box-title">用户详情</h3>
+                                <div class="col-lg-7 col-md-9">
+                                    <h4 class="card-title mb-4">基本资料</h4>
+                                    <form method="post" enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label for="id">用户ID</label>
+                                            <input type="text" class="form-control" id="id" name="id" value="{{ user.id }}" readonly>
                                         </div>
-                                        <div class="box-body" table-responsive no-padding>
-                                            <form method="post" enctype="multipart/form-data">
-                                                {% csrf_token %}
-                                                <div class="form-group">
-                                                    <label for="id">用户ID</label>
-                                                    <input type="text" class="form-control" id="id" name="id" 
-                                                    value="{{ user.id }}" readonly>
-                                                </div>
-
-                                                <div class="form-group">
-                                                    <label for="username">用户名</label>
-                                                    <input type="text" class="form-control" id="username" name="username" 
-                                                    value="{{ user.username }}">
-                                                </div>
-
-                                                <div class="form-group">
-                                                    <label for="email">邮箱</label>
-                                                    <input type="text" class="form-control" id="email" name="email" 
-                                                    value="{{ user.email }}">
-                                                </div>
-
-                                                <div class="form-group">
-                                                    <label for="phone">手机号</label>
-                                                    <input type="text" class="form-control" id="phone" name="phone" 
-                                                    value="{{ user.phone }}">
-                                                </div>
-
-                                                <div class="form-group">
-                                                    <label for="avatar">头像</label>
-                                                    <div>
-                                                        <img id="preview" src='{% static user.face %}' alt="预览"
-                                                        style="width: 150px; height: 150px;">
-                                                    </div>
-                                                    <!-- 隐藏文件输入框 -->
-                                                    <input type="file" id="avatar" name="avatar" accept="image/*"
-                                                    style="display: none;"> 
-                                                    
-                                                    <button type="button" class="btn btn-primary" id="upload-btn"
-                                                    style="margin-top: 10px; margin-right: 5px;">选择文件
-                                                    </button>
-                                                    <button type="button"
-                                                    class="btn btn-primary waves-effect waves-light" 
+                                        <div class="form-group">
+                                            <label for="username">用户名</label>
+                                            <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="email">邮箱</label>
+                                            <input type="text" class="form-control" id="email" name="email" value="{{ user.email }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="phone">手机号</label>
+                                            <input type="text" class="form-control" id="phone" name="phone" value="{{ user.phone }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="avatar">头像</label>
+                                            <div>
+                                                <img id="preview" src="{{ user.avatar_url }}" alt="预览" style="width: 150px; height: 150px; object-fit: cover;">
+                                            </div>
+                                            <input type="file" id="avatar" name="avatar" accept="image/*" style="display: none;">
+                                            <button type="button" class="btn btn-primary" id="upload-btn" style="margin-top: 10px; margin-right: 5px;">选择文件</button>
+                                            <button type="button"
+                                                    class="btn btn-primary waves-effect waves-light"
                                                     style="margin-top: 10px; margin-right: 5px; display: none;"
-                                                    id="remove-btn">删除头像
-                                                    </button>
-                                                </div>
-
-                                                <div class="form-group">
-                                                    <label for="info">个人介绍</label>
-                                                    <textarea class="form-control" id="info" 
-                                                    name="info" rows="4">{{ user.info }}</textarea>
-                                                </div>
-
-                                                <div class="form-group">
-                                                    <button type="submit" class="btn btn-primary">更新</button>
-                                                </div>
-                                            </form>
+                                                    id="remove-btn">删除头像</button>
                                         </div>
-                                    </div>
+                                        <div class="form-group">
+                                            <label for="info">个人介绍</label>
+                                            <textarea class="form-control" id="info" name="info" rows="4">{{ user.info }}</textarea>
+                                        </div>
+                                        <div class="form-group mb-0">
+                                            <button type="submit" class="btn btn-primary">更新</button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
-                        </section>
+                        {% elif active_tab == 'collects' %}
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="card-title mb-0">菜品收藏表</h4>
+                                <span class="text-muted small">共 {{ collect_page_obj.paginator.count }} 条</span>
+                            </div>
+                            <div class="row container-grid projects-wrapper">
+                                {% for collect in collect_page_obj %}
+                                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                        <div class="gallery-box mt-4"
+                                             style="position: relative;
+                                                    width: 100%;
+                                                    aspect-ratio: 1 / 1;
+                                                    border-radius: 8px;
+                                                    overflow: hidden">
+                                            <a class="gallery-popup"
+                                               href="{% url 'food_detail' collect.food.id %}"
+                                               onclick="window.location.href = this.href;return false;"
+                                               title="{{ collect.food.foodname }}">
+                                                <img class="gallery-demo-img img-fluid mx-auto"
+                                                     src="{{ collect.food.imgurl }}"
+                                                     alt="{{ collect.food.foodname }}"
+                                                     style="position: absolute;
+                                                            top: 0;
+                                                            left: 0;
+                                                            width: 100%;
+                                                            height: 100%;
+                                                            object-fit: cover">
+                                                <div class="gallery-overlay">
+                                                    <div class="overlay-content">
+                                                        <h5 class="overlay-title">{{ collect.food.foodname }}</h5>
+                                                        <p class="text-uppercase mb-0">{{ collect.food.foodtype }}</p>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="mt-3">
+                                            <h5 class="mb-1">{{ collect.food.foodname }}</h5>
+                                            <p class="text-muted mb-1">{{ collect.food.foodtype }} · ￥{{ collect.food.price }}</p>
+                                            <p class="text-muted small mb-2">收藏时间：{{ collect.added_time|date:"Y-m-d H:i" }}</p>
+                                            <a href="{% url 'food_detail' collect.food.id %}" class="btn btn-sm btn-outline-primary">查看详情</a>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <div class="col-12">
+                                        <div class="alert alert-light border mb-0">暂无菜品收藏</div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-3">
+                                {% if collect_page_obj.has_previous %}
+                                    <a href="?tab=collects&collect_page={{ collect_page_obj.previous_page_number }}" class="btn btn-light btn-sm">上一页</a>
+                                {% endif %}
+                                <span class="mx-2 text-muted small">第 {{ collect_page_obj.number }} / {{ collect_page_obj.paginator.num_pages }} 页</span>
+                                {% if collect_page_obj.has_next %}
+                                    <a href="?tab=collects&collect_page={{ collect_page_obj.next_page_number }}" class="btn btn-light btn-sm">下一页</a>
+                                {% endif %}
+                            </div>
+                        {% elif active_tab == 'comments' %}
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="card-title mb-0">菜品评论表</h4>
+                                <span class="text-muted small">共 {{ comment_page_obj.paginator.count }} 条</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>菜品</th>
+                                            <th>评论内容</th>
+                                            <th>评论时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in comment_page_obj %}
+                                            <tr>
+                                                <td>{% if row.food %}{{ row.food.foodname }}{% else %}菜品已删除{% endif %}</td>
+                                                <td>{{ row.comment.content }}</td>
+                                                <td>{{ row.comment.ctime|date:"Y-m-d H:i" }}</td>
+                                                <td>
+                                                    {% if row.food %}
+                                                        <a href="{% url 'food_detail' row.food.id %}">查看详情</a>
+                                                    {% else %}
+                                                        <span class="text-muted">不可用</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted">暂无菜品评论</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3">
+                                {% if comment_page_obj.has_previous %}
+                                    <a href="?tab=comments&comment_page={{ comment_page_obj.previous_page_number }}" class="btn btn-light btn-sm">上一页</a>
+                                {% endif %}
+                                <span class="mx-2 text-muted small">第 {{ comment_page_obj.number }} / {{ comment_page_obj.paginator.num_pages }} 页</span>
+                                {% if comment_page_obj.has_next %}
+                                    <a href="?tab=comments&comment_page={{ comment_page_obj.next_page_number }}" class="btn btn-light btn-sm">下一页</a>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="card-title mb-0">餐厅评分评论表</h4>
+                                <span class="text-muted small">共 {{ yelp_review_page_obj.paginator.count }} 条</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>餐厅</th>
+                                            <th>评分</th>
+                                            <th>评论内容</th>
+                                            <th>来源</th>
+                                            <th>评论时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for review in yelp_review_page_obj %}
+                                            <tr>
+                                                <td>{{ review.business.name }}</td>
+                                                <td>{{ review.stars }}</td>
+                                                <td>{{ review.text|default:"未填写评论" }}</td>
+                                                <td>{{ review.source }}</td>
+                                                <td>{{ review.review_date|date:"Y-m-d H:i" }}</td>
+                                                <td><a href="{% url 'recommendations:yelp_business_detail' review.business.business_id %}">查看详情</a></td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted">暂无餐厅评分评论</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3">
+                                {% if yelp_review_page_obj.has_previous %}
+                                    <a href="?tab=yelp_reviews&yelp_page={{ yelp_review_page_obj.previous_page_number }}" class="btn btn-light btn-sm">上一页</a>
+                                {% endif %}
+                                <span class="mx-2 text-muted small">第 {{ yelp_review_page_obj.number }} / {{ yelp_review_page_obj.paginator.num_pages }} 页</span>
+                                {% if yelp_review_page_obj.has_next %}
+                                    <a href="?tab=yelp_reviews&yelp_page={{ yelp_review_page_obj.next_page_number }}" class="btn btn-light btn-sm">下一页</a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -119,9 +258,8 @@
                 }
             });
 
-        // 当点击移除按钮时，清空头像预览和文件输入框的值
             $("#remove-btn").on("click", function() {
-                $("#preview").attr("src", "{% static user.face %}");
+                $("#preview").attr("src", "{{ user.avatar_url }}");
                 $("#avatar").val("");
                 $(this).hide();
             });

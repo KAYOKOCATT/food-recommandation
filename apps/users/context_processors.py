@@ -17,7 +17,7 @@ def user_info(request) -> dict[str, Any]:
         "login_source": identity.login_source,
         "login_source_label": login_source_label(identity.login_source),
         "is_demo_login": identity.is_demo_login,
-        "can_edit_profile": identity.is_local_user,
+        "can_edit_profile": identity.is_local_user or identity.is_yelp_demo_user,
         "can_submit_interactions": identity.is_local_user or identity.is_yelp_demo_user,
         "can_view_yelp_recommendations": identity.is_authenticated and not identity.is_admin,
         "nav_menu": build_navigation(identity),
