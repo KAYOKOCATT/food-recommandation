@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import os
+import sys
 import json
 from pathlib import Path
 from typing import Any
 
+os.environ['PYSPARK_PYTHON'] = sys.executable
+os.environ['PYSPARK_DRIVER_PYTHON'] = sys.executable
 
 def build_yelp_spark_stats(
     *,

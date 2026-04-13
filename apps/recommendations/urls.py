@@ -15,6 +15,7 @@ from apps.recommendations.views.yelp import (
     yelp_als_recommendations,
     yelp_business_detail,
     yelp_business_list,
+    yelp_hot_recommendations,
     yelp_recommendations,
 )
 
@@ -24,6 +25,7 @@ urlpatterns = [
     # 仪表板页面
     path("charts/dashboard/", ChartView.dashboard, name="dashboard"),
     path("yelp/restaurants/", yelp_business_list, name="yelp_business_list"),
+    path("yelp/recommendations/hot/", yelp_hot_recommendations, name="yelp_hot_recommendations"),
     path("yelp/recommendations/", yelp_recommendations, name="yelp_recommendations"),
     path("yelp/recommendations/als/", yelp_als_recommendations, name="yelp_als_recommendations"),
     path(

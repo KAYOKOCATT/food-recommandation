@@ -15,7 +15,7 @@
 为满足毕设答辩中的“大数据组件”展示需求，当前版本又新增了 Spark 离线批处理层：
 
 - `build_yelp_spark_stats`：从 Yelp 原始 JSONL 构建热门榜、城市榜、月度评论趋势等统计产物。
-- `build_yelp_spark_als`：从 `YelpReview` 评分交互构建 `yelp_als_userrec.json`。
+- `build_yelp_spark_als`：从 `archive_4` 原始 `business/review` JSONL 直接训练 ALS，并构建 `yelp_als_userrec.json`。
 - Web 侧新增独立的 Yelp ALS 实验推荐页，但默认推荐页仍保持“近期行为 + 内容相似 + 热门兜底”。
 
 ## 技术栈
@@ -322,14 +322,15 @@ python manage.py build_yelp_spark_stats --data-dir data/archive_4 --output-dir d
 Yelp Spark ALS 命令：
 
 ```bash
-# 从数据库中的 YelpReview(stars) 导出交互并调用 Spark ALS
-python manage.py build_yelp_spark_als --output data/recommendations/yelp_als_userrec.json
+# 从 archive_4 原始 Yelp JSONL 直接训练 Spark ALS
+python manage.py build_yelp_spark_als --data-dir data/archive_4 --output data/recommendations/yelp_als_userrec.json
 ```
 
 说明：
 
-- 输入数据源是数据库中的 `YelpReview`。
-- 若同一用户对同一餐厅存在多条评论，导出到 ALS 前会按“最新一条评分”聚合。
+- 输入数据源是 `archive_4` 下的原始 `business.json` 与 `review.json`。
+- ALS 只保留餐厅类 business 对应的 review 交互，不直接使用全量非餐饮商家。
+- 在线页读取 ALS 结果时，优先使用 `User.external_user_id` 对齐原始 Yelp 用户。
 - 在线默认推荐页不会依赖 ALS；ALS 结果只用于独立实验页和答辩展示。
 
 默认输出：

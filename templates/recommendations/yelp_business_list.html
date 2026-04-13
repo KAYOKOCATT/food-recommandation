@@ -56,9 +56,14 @@
                 当前页面展示导入后的 Yelp 餐厅库，可按名称、菜系和城市筛选，再进入详情页查看相似餐厅。
               </p>
               {% if can_view_yelp_recommendations %}
-                <a href="{% url 'recommendations:yelp_recommendations' %}" class="btn btn-outline-primary btn-sm">
-                  查看为你推荐
-                </a>
+                <div class="d-flex align-items-center">
+                  <a href="{% url 'recommendations:yelp_hot_recommendations' %}" class="btn btn-outline-secondary btn-sm mr-2">
+                    查看热门推荐
+                  </a>
+                  <a href="{% url 'recommendations:yelp_recommendations' %}" class="btn btn-outline-primary btn-sm">
+                    查看为你推荐
+                  </a>
+                </div>
               {% endif %}
             </div>
 

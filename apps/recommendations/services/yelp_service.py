@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import json
+from collections import defaultdict
 from uuid import uuid4
 from dataclasses import dataclass
 from pathlib import Path
 from math import log1p
+from typing import Any
 
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -17,6 +20,7 @@ from apps.recommendations.services.similarity import (
     rerank_from_recent_items,
     similarity_cache,
 )
+from apps.users.models import User
 
 
 @dataclass(frozen=True)
@@ -25,10 +29,22 @@ class YelpBusinessRecommendation:
     score: float
 
 
+@dataclass(frozen=True)
+class YelpMonthlyStat:
+    year_month: str
+    review_count: int
+    avg_stars: float
+
+
 class YelpService:
     SIMILARITY_FILE = settings.BASE_DIR / "data" / "recommendations" / "yelp_content_itemcf.json"
     USERCF_FILE = settings.BASE_DIR / "data" / "recommendations" / "yelp_usercf.json"
     ALS_FILE = settings.BASE_DIR / "data" / "recommendations" / "yelp_als_userrec.json"
+    HOT_FILE = settings.BASE_DIR / "data" / "recommendations" / "yelp_spark_hot.json"
+    CITY_TOP_FILE = settings.BASE_DIR / "data" / "recommendations" / "yelp_spark_city_top.json"
+    MONTHLY_STATS_FILE = (
+        settings.BASE_DIR / "data" / "recommendations" / "yelp_spark_monthly_stats.json"
+    )
 
     @classmethod
     def build_business_queryset(
@@ -225,10 +241,13 @@ class YelpService:
     ) -> list[YelpBusinessRecommendation]:
         if top_k <= 0:
             return []
+        user_lookup_key = cls._als_lookup_key(user_id)
+        if not user_lookup_key:
+            return []
 
         source = Path(recommendation_file) if recommendation_file else cls.ALS_FILE
         try:
-            candidates = similarity_cache.get(source).get(str(user_id), [])
+            candidates = similarity_cache.get(source).get(user_lookup_key, [])
         except (OSError, ValueError):
             return []
 
@@ -339,6 +358,121 @@ class YelpService:
             for business in businesses
         ]
 
+    @classmethod
+    def get_hot_recommendations(
+        cls,
+        *,
+        top_k: int = 12,
+        recommendation_file: str | Path | None = None,
+    ) -> list[YelpBusinessRecommendation]:
+        if top_k <= 0:
+            return []
+
+        source = Path(recommendation_file) if recommendation_file else cls.HOT_FILE
+        rows = cls._safe_json_list(source)
+        if not rows:
+            return []
+
+        candidate_ids = [
+            str(row.get("business_id") or "")
+            for row in rows
+            if row.get("business_id")
+        ]
+        businesses = YelpBusiness.objects.in_bulk(candidate_ids, field_name="business_id")
+        recommendations: list[YelpBusinessRecommendation] = []
+        for row in rows:
+            business_id = str(row.get("business_id") or "")
+            if not business_id:
+                continue
+            business = businesses.get(business_id)
+            if business is None:
+                continue
+            recommendations.append(
+                YelpBusinessRecommendation(
+                    business=business,
+                    score=float(row.get("review_count") or business.review_count),
+                )
+            )
+            if len(recommendations) >= top_k:
+                break
+        return recommendations
+
+    @classmethod
+    def get_city_hot_recommendations(
+        cls,
+        *,
+        city_limit: int = 4,
+        per_city: int = 4,
+        recommendation_file: str | Path | None = None,
+    ) -> list[tuple[str, list[YelpBusinessRecommendation]]]:
+        if city_limit <= 0 or per_city <= 0:
+            return []
+
+        source = Path(recommendation_file) if recommendation_file else cls.CITY_TOP_FILE
+        rows = cls._safe_json_list(source)
+        if not rows:
+            return []
+
+        candidate_ids = [
+            str(row.get("business_id") or "")
+            for row in rows
+            if row.get("business_id")
+        ]
+        businesses = YelpBusiness.objects.in_bulk(candidate_ids, field_name="business_id")
+        grouped: dict[str, list[YelpBusinessRecommendation]] = defaultdict(list)
+        for row in rows:
+            city = str(row.get("city") or "").strip()
+            business_id = str(row.get("business_id") or "")
+            if not city or not business_id:
+                continue
+            business = businesses.get(business_id)
+            if business is None:
+                continue
+            city_recommendations = grouped[city]
+            if len(city_recommendations) >= per_city:
+                continue
+            city_recommendations.append(
+                YelpBusinessRecommendation(
+                    business=business,
+                    score=float(row.get("review_count") or business.review_count),
+                )
+            )
+
+        return [
+            (city, recommendations)
+            for city, recommendations in list(grouped.items())[:city_limit]
+            if recommendations
+        ]
+
+    @classmethod
+    def get_monthly_hot_stats(
+        cls,
+        *,
+        limit: int = 12,
+        stats_file: str | Path | None = None,
+    ) -> list[YelpMonthlyStat]:
+        if limit <= 0:
+            return []
+
+        source = Path(stats_file) if stats_file else cls.MONTHLY_STATS_FILE
+        rows = cls._safe_json_list(source)
+        if not rows:
+            return []
+
+        stats: list[YelpMonthlyStat] = []
+        for row in rows[-limit:]:
+            year_month = str(row.get("year_month") or "").strip()
+            if not year_month:
+                continue
+            stats.append(
+                YelpMonthlyStat(
+                    year_month=year_month,
+                    review_count=int(row.get("review_count") or 0),
+                    avg_stars=float(row.get("avg_stars") or 0.0),
+                )
+            )
+        return stats
+
     @staticmethod
     def _safe_similarity_candidates(
         similarity_file: Path,
@@ -348,6 +482,16 @@ class YelpService:
             return similarity_cache.get(similarity_file).get(str(business_id), [])
         except (OSError, ValueError):
             return []
+
+    @staticmethod
+    def _safe_json_list(source: Path) -> list[dict[str, Any]]:
+        try:
+            raw = json.loads(source.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return []
+        if not isinstance(raw, list):
+            return []
+        return [row for row in raw if isinstance(row, dict)]
 
     @staticmethod
     def _build_local_review_id(user_id: int) -> str:
@@ -373,6 +517,16 @@ class YelpService:
             if len(result) >= limit:
                 break
         return result
+
+    @staticmethod
+    def _als_lookup_key(user_id: int) -> str | None:
+        user = User.objects.filter(id=user_id).only("external_user_id").first()
+        if user is None:
+            return None
+        external_user_id = (user.external_user_id or "").strip()
+        if external_user_id:
+            return external_user_id
+        return None
 
     @classmethod
     def _blend_recent_and_popularity(

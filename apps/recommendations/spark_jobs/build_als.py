@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import os
+import sys
 import json
 from pathlib import Path
 from typing import Any
 
+os.environ['PYSPARK_PYTHON'] = sys.executable
+os.environ['PYSPARK_DRIVER_PYTHON'] = sys.executable
 
 def build_yelp_als_recommendations(
     *,
-    interactions_path: str | Path,
+    data_dir: str | Path,
     output_path: str | Path,
     rank: int = 20,
     max_iter: int = 10,
@@ -15,22 +19,40 @@ def build_yelp_als_recommendations(
     top_k: int = 20,
     app_name: str = "sc_food_rec-yelp-als",
 ) -> Path:
-    """Train a Spark ALS model from JSONL interactions and persist top-k user recommendations."""
+    """Train a Spark ALS model from raw Yelp JSONL files and persist top-k user recommendations."""
     spark = _create_spark_session(app_name)
     try:
-        source = Path(interactions_path)
-        if not source.exists():
-            raise FileNotFoundError(f"Interaction file not found: {source}")
+        source = Path(data_dir)
+        business_path = source / "yelp_academic_dataset_business.json"
+        review_path = source / "yelp_academic_dataset_review.json"
+        if not business_path.exists():
+            raise FileNotFoundError(f"Business file not found: {business_path}")
+        if not review_path.exists():
+            raise FileNotFoundError(f"Review file not found: {review_path}")
 
         output = Path(output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
 
         functions = _functions()
         als, string_indexer = _ml_classes()
-
-        raw_df = spark.read.json(str(source)).select("user_id", "business_id", "stars")
+        business_df = spark.read.json(str(business_path)).select(
+            "business_id",
+            "categories",
+        )
+        review_df = spark.read.json(str(review_path)).select(
+            "user_id",
+            "business_id",
+            "stars",
+        )
+        restaurant_business_df = business_df.filter(
+            functions.col("categories").rlike("(?i)Restaurants|Cafe|Cafes")
+            & ~functions.col("categories").rlike("(?i)Grocery|Pharmacy|Department Store|Pet Food")
+        ).select("business_id")
+        raw_df = review_df.join(restaurant_business_df, on="business_id", how="inner")
         ratings_df = raw_df.dropna().dropDuplicates(["user_id", "business_id"])
-        if ratings_df.rdd.isEmpty():
+        print(f"Ratings DataFrame schema: {ratings_df.schema}")
+        ratings_df.show(5, truncate=False)
+        if ratings_df.isEmpty():
             _write_json(output, {})
             return output
 
@@ -53,7 +75,7 @@ def build_yelp_als_recommendations(
             .withColumn("stars", functions.col("stars").cast("float"))
             .select("user_id", "business_id", "user_index", "business_index", "stars")
         )
-        if indexed_df.rdd.isEmpty():
+        if indexed_df.isEmpty():
             _write_json(output, {})
             return output
 
@@ -74,7 +96,7 @@ def build_yelp_als_recommendations(
             functions.explode("recommendations").alias("recommendation"),
         ).select(
             "user_index",
-            functions.col("recommendation.itemIndex").cast("int").alias("business_index"),
+            functions.col("recommendation.business_index").cast("int").alias("business_index"),
             functions.round(functions.col("recommendation.rating"), 6).alias("score"),
         )
 
@@ -118,6 +140,7 @@ def _create_spark_session(app_name: str):
         .appName(app_name)
         .config("spark.ui.enabled", "false")
         .config("spark.sql.shuffle.partitions", "4")
+        .config("spark.driver.memory", "8g")
         .getOrCreate()
     )
 

@@ -129,6 +129,84 @@ def yelp_recommendations(request: HttpRequest) -> HttpResponse:
     )
 
 
+def yelp_hot_recommendations(request: HttpRequest) -> HttpResponse:
+    identity = require_identity(
+        request,
+        allow_local_user=True,
+        allow_yelp_demo_user=True,
+    )
+    if isinstance(identity, JsonResponse):
+        return identity
+    if isinstance(identity, HttpResponse):
+        return identity
+
+    recommendations = YelpService.get_hot_recommendations(top_k=12)
+    city_groups = YelpService.get_city_hot_recommendations(city_limit=4, per_city=4)
+    monthly_stats = YelpService.get_monthly_hot_stats(limit=12)
+    return render(
+        request,
+        "recommendations/yelp_hot_recommendations.html",
+        {
+            "recommendations": recommendations,
+            "city_groups": city_groups,
+            "monthly_stats": monthly_stats,
+            "has_stats": bool(recommendations or city_groups or monthly_stats),
+        },
+    )
+
+
+def yelp_hot_recommendations(request: HttpRequest) -> HttpResponse:
+    identity = require_identity(
+        request,
+        allow_local_user=True,
+        allow_yelp_demo_user=True,
+    )
+    if isinstance(identity, JsonResponse):
+        return identity
+    if isinstance(identity, HttpResponse):
+        return identity
+
+    recommendations = YelpService.get_hot_recommendations(top_k=12)
+    city_groups = YelpService.get_city_hot_recommendations(city_limit=4, per_city=4)
+    monthly_stats = YelpService.get_monthly_hot_stats(limit=12)
+    return render(
+        request,
+        "recommendations/yelp_hot_recommendations.html",
+        {
+            "recommendations": recommendations,
+            "city_groups": city_groups,
+            "monthly_stats": monthly_stats,
+            "has_stats": bool(recommendations or city_groups or monthly_stats),
+        },
+    )
+
+
+def yelp_hot_recommendations(request: HttpRequest) -> HttpResponse:
+    identity = require_identity(
+        request,
+        allow_local_user=True,
+        allow_yelp_demo_user=True,
+    )
+    if isinstance(identity, JsonResponse):
+        return identity
+    if isinstance(identity, HttpResponse):
+        return identity
+
+    recommendations = YelpService.get_hot_recommendations(top_k=12)
+    city_groups = YelpService.get_city_hot_recommendations(city_limit=4, per_city=4)
+    monthly_stats = YelpService.get_monthly_hot_stats(limit=12)
+    return render(
+        request,
+        "recommendations/yelp_hot_recommendations.html",
+        {
+            "recommendations": recommendations,
+            "city_groups": city_groups,
+            "monthly_stats": monthly_stats,
+            "has_stats": bool(recommendations or city_groups or monthly_stats),
+        },
+    )
+
+
 def yelp_als_recommendations(request: HttpRequest) -> HttpResponse:
     identity = require_identity(
         request,

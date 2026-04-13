@@ -156,12 +156,14 @@ class YelpServiceTests(TestCase):
 
         self.assertEqual(result, [])
 
-    def test_get_als_recommendations_hydrates_from_json_and_skips_seen(self) -> None:
+    def test_get_als_recommendations_uses_external_user_id_and_skips_seen(self) -> None:
         user = User.objects.create(
             username="als-user",
             password="secret123",
             email="als@example.com",
             phone="13800138009",
+            source="yelp",
+            external_user_id="raw-yelp-user-1",
         )
         YelpReview.objects.create(
             review_id="als_seen_r1",
@@ -176,7 +178,7 @@ class YelpServiceTests(TestCase):
             recommendation_path.write_text(
                 json.dumps(
                     {
-                        str(user.id): [
+                        "raw-yelp-user-1": [
                             {"business_id": "b1", "score": 4.9},
                             {"business_id": "b2", "score": 4.7},
                         ]
@@ -193,6 +195,34 @@ class YelpServiceTests(TestCase):
 
         self.assertEqual([item.business.business_id for item in result], ["b2"])
 
+    def test_get_als_recommendations_returns_empty_for_local_user_without_external_id(self) -> None:
+        user = User.objects.create(
+            username="als-local-user",
+            password="secret123",
+            email="als-local@example.com",
+            phone="13800138019",
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            recommendation_path = Path(temp_dir) / "yelp_als_userrec.json"
+            recommendation_path.write_text(
+                json.dumps(
+                    {
+                        "some-raw-user": [
+                            {"business_id": "b2", "score": 4.7},
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = YelpService.get_als_recommendations(
+                user.id,
+                top_k=5,
+                recommendation_file=recommendation_path,
+            )
+
+        self.assertEqual(result, [])
+
     def test_get_als_recommendations_returns_empty_when_json_is_invalid(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             recommendation_path = Path(temp_dir) / "yelp_als_userrec.json"
@@ -204,6 +234,71 @@ class YelpServiceTests(TestCase):
             )
 
         self.assertEqual(result, [])
+
+    def test_get_hot_recommendations_hydrates_from_spark_json(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            recommendation_path = Path(temp_dir) / "yelp_spark_hot.json"
+            recommendation_path.write_text(
+                json.dumps(
+                    [
+                        {"business_id": "b2", "review_count": 88},
+                        {"business_id": "missing", "review_count": 77},
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = YelpService.get_hot_recommendations(
+                top_k=5,
+                recommendation_file=recommendation_path,
+            )
+
+        self.assertEqual([item.business.business_id for item in result], ["b2"])
+        self.assertEqual(result[0].score, 88.0)
+
+    def test_get_city_hot_recommendations_groups_rows_by_city(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            recommendation_path = Path(temp_dir) / "yelp_spark_city_top.json"
+            recommendation_path.write_text(
+                json.dumps(
+                    [
+                        {"business_id": "b1", "city": "Philadelphia", "review_count": 120},
+                        {"business_id": "b2", "city": "Philadelphia", "review_count": 80},
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = YelpService.get_city_hot_recommendations(
+                city_limit=2,
+                per_city=2,
+                recommendation_file=recommendation_path,
+            )
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0][0], "Philadelphia")
+        self.assertEqual(
+            [item.business.business_id for item in result[0][1]],
+            ["b1", "b2"],
+        )
+
+    def test_get_monthly_hot_stats_reads_spark_stats_json(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            stats_path = Path(temp_dir) / "yelp_spark_monthly_stats.json"
+            stats_path.write_text(
+                json.dumps(
+                    [
+                        {"year_month": "2024-01", "review_count": 100, "avg_stars": 4.2},
+                        {"year_month": "2024-02", "review_count": 120, "avg_stars": 4.3},
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = YelpService.get_monthly_hot_stats(limit=2, stats_file=stats_path)
+
+        self.assertEqual([item.year_month for item in result], ["2024-01", "2024-02"])
+        self.assertEqual(result[1].review_count, 120)
 
     def test_get_recent_recommendations_uses_recent_reviews_and_similarity(self) -> None:
         user = User.objects.create(
@@ -683,12 +778,75 @@ class YelpViewTests(TestCase):
         self.assertContains(response, "基于你最近评分过的餐厅生成")
         self.assertContains(response, "Demo Recent Sushi")
 
-    def test_yelp_als_recommendations_renders_model_results(self) -> None:
+    def test_yelp_hot_recommendations_renders_spark_stats(self) -> None:
         session = self.client.session
         session["user_id"] = self.user.id
         session["auth_role"] = "user"
         session["login_source"] = "local"
         session["is_demo_login"] = False
+        session.save()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            hot_path = Path(temp_dir) / "yelp_spark_hot.json"
+            city_path = Path(temp_dir) / "yelp_spark_city_top.json"
+            monthly_path = Path(temp_dir) / "yelp_spark_monthly_stats.json"
+            hot_path.write_text(
+                json.dumps([{"business_id": "b1", "review_count": 120}]),
+                encoding="utf-8",
+            )
+            city_path.write_text(
+                json.dumps([{"business_id": "b1", "city": "Philadelphia", "review_count": 120}]),
+                encoding="utf-8",
+            )
+            monthly_path.write_text(
+                json.dumps([{"year_month": "2024-01", "review_count": 100, "avg_stars": 4.2}]),
+                encoding="utf-8",
+            )
+            with patch.object(YelpService, "HOT_FILE", hot_path), patch.object(
+                YelpService, "CITY_TOP_FILE", city_path
+            ), patch.object(YelpService, "MONTHLY_STATS_FILE", monthly_path):
+                response = self.client.get("/api/v1/yelp/recommendations/hot/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "基于 Spark SQL 离线统计生成")
+        self.assertContains(response, "Alpha Sushi")
+        self.assertContains(response, "Philadelphia")
+        self.assertContains(response, "2024-01")
+
+    def test_yelp_hot_recommendations_degrades_when_stats_are_missing(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "local"
+        session["is_demo_login"] = False
+        session.save()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            missing_hot = Path(temp_dir) / "missing_hot.json"
+            missing_city = Path(temp_dir) / "missing_city.json"
+            missing_monthly = Path(temp_dir) / "missing_monthly.json"
+            with patch.object(YelpService, "HOT_FILE", missing_hot), patch.object(
+                YelpService, "CITY_TOP_FILE", missing_city
+            ), patch.object(YelpService, "MONTHLY_STATS_FILE", missing_monthly):
+                response = self.client.get("/api/v1/yelp/recommendations/hot/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "当前暂无可展示的 Spark 热门推荐数据。")
+
+    def test_yelp_als_recommendations_renders_model_results(self) -> None:
+        yelp_user = User.objects.create(
+            username="als-demo-user",
+            password="!",
+            email="als-demo@example.com",
+            phone="13800138029",
+            source="yelp",
+            external_user_id="raw-yelp-user-2",
+        )
+        session = self.client.session
+        session["user_id"] = yelp_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "yelp_demo"
+        session["is_demo_login"] = True
         session.save()
 
         candidate_business = YelpBusiness.objects.create(
@@ -707,7 +865,7 @@ class YelpViewTests(TestCase):
             recommendation_path.write_text(
                 json.dumps(
                     {
-                        str(self.user.id): [
+                        "raw-yelp-user-2": [
                             {
                                 "business_id": candidate_business.business_id,
                                 "score": 4.88,
@@ -1001,56 +1159,22 @@ class YelpSparkCommandTests(TestCase):
             top_k=8,
         )
 
-    def test_build_yelp_spark_als_exports_latest_interactions_and_delegates(self) -> None:
-        business = YelpBusiness.objects.create(
-            business_id="spark-b1",
-            name="Spark Sushi",
-            categories="Restaurants, Sushi Bars",
-            stars=4.5,
-            review_count=12,
-            city="Philadelphia",
-            state="PA",
-            is_open=True,
-        )
-        user = User.objects.create(
-            username="spark-user",
-            password="secret123",
-            email="spark@example.com",
-            phone="13800138111",
-        )
-        YelpReview.objects.create(
-            review_id="spark-r1",
-            business=business,
-            user=user,
-            stars=2.0,
-            source="local",
-        )
-        YelpReview.objects.create(
-            review_id="spark-r2",
-            business=business,
-            user=user,
-            stars=5.0,
-            source="local",
-        )
-
+    def test_build_yelp_spark_als_reads_archive_dir_and_delegates(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
+            data_dir = Path(temp_dir) / "archive_4"
+            data_dir.mkdir(parents=True, exist_ok=True)
+            (data_dir / "yelp_academic_dataset_business.json").write_text("{}", encoding="utf-8")
+            (data_dir / "yelp_academic_dataset_review.json").write_text("{}", encoding="utf-8")
             output_path = Path(temp_dir) / "yelp_als_userrec.json"
-            captured: dict[str, str] = {}
-
-            def _fake_build(**kwargs):
-                captured["interactions_path"] = str(kwargs["interactions_path"])
-                payload = Path(kwargs["interactions_path"]).read_text(encoding="utf-8")
-                captured["payload"] = payload
-                Path(kwargs["output_path"]).write_text("{}", encoding="utf-8")
-                return Path(kwargs["output_path"])
-
             with patch(
                 "apps.recommendations.management.commands.build_yelp_spark_als."
                 "build_yelp_als_recommendations",
-                side_effect=_fake_build,
+                return_value=output_path,
             ) as mocked:
                 call_command(
                     "build_yelp_spark_als",
+                    "--data-dir",
+                    str(data_dir),
                     "--output",
                     str(output_path),
                     "--rank",
@@ -1063,7 +1187,11 @@ class YelpSparkCommandTests(TestCase):
                     "5",
                 )
 
-        mocked.assert_called_once()
-        self.assertIn('"user_id": "' + str(user.id) + '"', captured["payload"])
-        self.assertIn('"business_id": "spark-b1"', captured["payload"])
-        self.assertIn('"stars": 5.0', captured["payload"])
+        mocked.assert_called_once_with(
+            data_dir=str(data_dir),
+            output_path=str(output_path),
+            rank=12,
+            max_iter=6,
+            reg_param=0.2,
+            top_k=5,
+        )

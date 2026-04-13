@@ -13,6 +13,7 @@ from apps.recommendations.services.similarity import (
 )
 from apps.recommendations.services.yelp_service import (
     YelpBusinessRecommendation,
+    YelpMonthlyStat,
     YelpService,
 )
 
@@ -22,6 +23,7 @@ __all__ = [
     "RecommendationCandidate",
     "SimilarityCache",
     "YelpBusinessRecommendation",
+    "YelpMonthlyStat",
     "YelpService",
     "rerank_from_recent_items",
     "similarity_cache",

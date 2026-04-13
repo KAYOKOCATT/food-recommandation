@@ -320,7 +320,9 @@ class AuthFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         nav_menu = response.context["nav_menu"]
         all_labels = [item["label"] for section in nav_menu for item in section["items"]]
+        self.assertIn("Yelp 热门推荐", all_labels)
         self.assertIn("Yelp 为你推荐", all_labels)
+        self.assertIn("Yelp ALS 实验", all_labels)
         self.assertIn("个人中心", all_labels)
         self.assertIn("修改密码", all_labels)
 
