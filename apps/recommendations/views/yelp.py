@@ -14,11 +14,17 @@ def yelp_business_list(request: HttpRequest) -> HttpResponse:
     page_raw = request.GET.get("page", "1")
     q = request.GET.get("q", "")
     city = request.GET.get("city", "")
+    is_open_only = request.GET.get("is_open") == "1"
     try:
         page = int(page_raw)
     except ValueError:
         page = 1
-    page_obj = YelpService.list_businesses(page=page, q=q, city=city)
+    page_obj = YelpService.list_businesses(
+        page=page,
+        q=q,
+        city=city,
+        is_open_only=is_open_only,
+    )
 
     return render(
         request,
@@ -27,6 +33,7 @@ def yelp_business_list(request: HttpRequest) -> HttpResponse:
             "page_obj": page_obj,
             "search_query": q,
             "selected_city": city,
+            "is_open_only": is_open_only,
         },
     )
 
@@ -103,9 +110,15 @@ def yelp_recommendations(request: HttpRequest) -> HttpResponse:
     if isinstance(identity, HttpResponse):
         return identity
 
-    recommendations = YelpService.get_usercf_recommendations(identity.user.id, top_k=12)
+    recommendations, has_recent_activity = YelpService.get_recent_recommendations(
+        identity.user.id,
+        top_k=12,
+    )
     return render(
         request,
         "recommendations/yelp_recommendations.html",
-        {"recommendations": recommendations},
+        {
+            "recommendations": recommendations,
+            "has_recent_activity": has_recent_activity,
+        },
     )

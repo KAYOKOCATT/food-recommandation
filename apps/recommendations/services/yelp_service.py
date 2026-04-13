@@ -3,6 +3,7 @@ from __future__ import annotations
 from uuid import uuid4
 from dataclasses import dataclass
 from pathlib import Path
+from math import log1p
 
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -13,6 +14,7 @@ from django.utils import timezone
 from apps.recommendations.models import YelpBusiness, YelpReview
 from apps.recommendations.services.similarity import (
     RecommendationCandidate,
+    rerank_from_recent_items,
     similarity_cache,
 )
 
@@ -33,6 +35,7 @@ class YelpService:
         *,
         q: str = "",
         city: str = "",
+        is_open_only: bool = False,
     ) -> QuerySet[YelpBusiness]:
         queryset = YelpBusiness.objects.all()
         keyword = q.strip()
@@ -47,6 +50,8 @@ class YelpService:
             )
         if city_name:
             queryset = queryset.filter(city__iexact=city_name)
+        if is_open_only:
+            queryset = queryset.filter(is_open=True)
         return queryset.order_by("-review_count", "-stars", "name")
 
     @classmethod
@@ -57,8 +62,12 @@ class YelpService:
         per_page: int = 18,
         q: str = "",
         city: str = "",
+        is_open_only: bool = False,
     ):
-        paginator = Paginator(cls.build_business_queryset(q=q, city=city), max(per_page, 1))
+        paginator = Paginator(
+            cls.build_business_queryset(q=q, city=city, is_open_only=is_open_only),
+            max(per_page, 1),
+        )
         return paginator.get_page(page)
 
     @classmethod
@@ -205,6 +214,84 @@ class YelpService:
                 break
         return recommendations
 
+    @classmethod
+    def get_recent_recommendations(
+        cls,
+        user_id: int,
+        *,
+        top_k: int = 12,
+        recent_limit: int = 8,
+        similarity_file: str | Path | None = None,
+    ) -> tuple[list[YelpBusinessRecommendation], bool]:
+        recent_business_ids = cls._recent_review_business_ids(
+            user_id,
+            limit=max(recent_limit, 1),
+        )
+        if not recent_business_ids:
+            return cls.get_popular_recommendations(top_k=top_k), False
+
+        source = Path(similarity_file) if similarity_file else cls.SIMILARITY_FILE
+        try:
+            candidates = rerank_from_recent_items(
+                recent_business_ids,
+                source,
+                top_k=max(top_k * 3, top_k),
+            )
+        except (OSError, ValueError):
+            candidates = []
+
+        seen_business_ids = set(recent_business_ids)
+        candidate_ids = [
+            candidate.item_id
+            for candidate in candidates
+            if candidate.item_id not in seen_business_ids
+        ]
+        businesses = YelpBusiness.objects.in_bulk(candidate_ids, field_name="business_id")
+
+        recommendations: list[YelpBusinessRecommendation] = []
+        for candidate in candidates:
+            if candidate.item_id in seen_business_ids:
+                continue
+            business = businesses.get(candidate.item_id)
+            if business is None:
+                continue
+            blended_score = cls._blend_recent_and_popularity(
+                recent_score=candidate.score,
+                business=business,
+            )
+            recommendations.append(
+                YelpBusinessRecommendation(
+                    business=business,
+                    score=blended_score,
+                )
+            )
+            if len(recommendations) >= top_k:
+                break
+
+        if recommendations:
+            return recommendations, True
+        return cls.get_popular_recommendations(top_k=top_k), False
+
+    @classmethod
+    def get_popular_recommendations(
+        cls,
+        *,
+        top_k: int = 12,
+    ) -> list[YelpBusinessRecommendation]:
+        if top_k <= 0:
+            return []
+
+        businesses = list(
+            YelpBusiness.objects.order_by("-review_count", "-stars", "name")[:top_k]
+        )
+        return [
+            YelpBusinessRecommendation(
+                business=business,
+                score=cls._popularity_score(business),
+            )
+            for business in businesses
+        ]
+
     @staticmethod
     def _safe_similarity_candidates(
         similarity_file: Path,
@@ -218,3 +305,37 @@ class YelpService:
     @staticmethod
     def _build_local_review_id(user_id: int) -> str:
         return f"local_{user_id}_{uuid4().hex[:20]}"
+
+    @classmethod
+    def _recent_review_business_ids(
+        cls,
+        user_id: int,
+        *,
+        limit: int,
+    ) -> list[str]:
+        interactions = YelpReview.objects.filter(user_id=user_id).order_by(
+            "-review_date", "-id"
+        ).values_list("business__business_id", flat=True)
+        seen: set[str] = set()
+        result: list[str] = []
+        for business_id in interactions:
+            if business_id in seen:
+                continue
+            seen.add(business_id)
+            result.append(business_id)
+            if len(result) >= limit:
+                break
+        return result
+
+    @classmethod
+    def _blend_recent_and_popularity(
+        cls,
+        *,
+        recent_score: float,
+        business: YelpBusiness,
+    ) -> float:
+        return round((recent_score * 0.75) + (cls._popularity_score(business) * 0.25), 6)
+
+    @staticmethod
+    def _popularity_score(business: YelpBusiness) -> float:
+        return round(log1p(max(business.review_count, 0)) + (business.stars * 0.1), 6)

@@ -20,8 +20,14 @@
           <div class="card-body">
             <div class="d-flex align-items-center justify-content-between mb-4">
               <div>
-                <h4 class="card-title mb-1">基于你的 Yelp 历史行为生成</h4>
-                <p class="text-muted small mb-0">优先用于演示 Yelp 导入用户的个性化效果。</p>
+                <h4 class="card-title mb-1">基于你最近评分过的餐厅生成</h4>
+                <p class="text-muted small mb-0">
+                  {% if has_recent_activity %}
+                    近期评分会触发基于内容相似度的候选重排，再叠加餐厅热度得到当前结果。
+                  {% else %}
+                    当前没有足够的近期评分记录，以下先展示热门餐厅作为兜底结果。
+                  {% endif %}
+                </p>
               </div>
               <a href="{% url 'recommendations:yelp_business_list' %}" class="btn btn-outline-primary btn-sm">返回餐厅列表</a>
             </div>
@@ -43,7 +49,7 @@
                       </div>
                       <p class="text-muted small mb-2">{{ item.business.categories|default:"暂无分类" }}</p>
                       <div class="small text-muted">
-                        星级 {{ item.business.stars|floatformat:1 }} · 评论数 {{ item.business.review_count }}
+                        星级 {{ item.business.stars|floatformat:1 }} · 热度 {{ item.business.review_count }}
                       </div>
                     </div>
                   </div>
@@ -51,7 +57,7 @@
               {% empty %}
                 <div class="col-12">
                   <div class="alert alert-light border mb-0">
-                    当前账号暂无可展示推荐。你仍可返回 Yelp 餐厅列表浏览内容推荐结果。
+                    当前账号暂无可展示推荐。你仍可返回餐厅发现页继续浏览并进入详情页查看相似餐厅。
                   </div>
                 </div>
               {% endfor %}

@@ -37,7 +37,7 @@ def build_navigation(identity: SessionIdentity) -> list[dict[str, Any]]:
             [
                 _item("statistics_recommendations", "热门推荐", "uim uim-star"),
                 _item("food_list", "美食列表", "uim uim-schedule"),
-                _item("recommendations:yelp_business_list", "Yelp 餐厅推荐", "uim uim-store"),
+                _item("recommendations:yelp_business_list", "Yelp 餐厅发现", "uim uim-store"),
             ],
         ),
     ]

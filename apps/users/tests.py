@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -13,7 +12,6 @@ from django.test.utils import CaptureQueriesContext
 from apps.foods.models import Collect, Comment, Foods
 from apps.foods.ingestion import CrawlResult, ImportResult
 from apps.recommendations.models import YelpBusiness, YelpReview
-from apps.recommendations.services.yelp_service import YelpService
 from apps.users.demo_candidates import YelpDemoCandidate
 from apps.users.models import User
 
@@ -164,11 +162,7 @@ class AuthFlowTests(TestCase):
         session["is_demo_login"] = True
         session.save()
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            recommendation_path = Path(temp_dir) / "yelp_usercf.json"
-            recommendation_path.write_text("{}", encoding="utf-8")
-            with patch.object(YelpService, "USERCF_FILE", recommendation_path):
-                response = self.client.get("/api/v1/yelp/recommendations/")
+        response = self.client.get("/api/v1/yelp/recommendations/")
 
         self.assertEqual(response.status_code, 200)
         nav_menu = response.context["nav_menu"]
