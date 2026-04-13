@@ -1,0 +1,82 @@
+[
+  {
+    "business_id": "_ab50qdWOk0DdB6XOrBitw",
+    "name": "Acme Oyster House",
+    "city": "New Orleans",
+    "state": "LA",
+    "stars": 4.0,
+    "review_count": 7568
+  },
+  {
+    "business_id": "ac1AeYqs8Z4_e2X5M3if2A",
+    "name": "Oceana Grill",
+    "city": "New Orleans",
+    "state": "LA",
+    "stars": 4.0,
+    "review_count": 7400
+  },
+  {
+    "business_id": "GXFMD0Z4jEVZBCsbPf4CTQ",
+    "name": "Hattie B’s Hot Chicken - Nashville",
+    "city": "Nashville",
+    "state": "TN",
+    "stars": 4.5,
+    "review_count": 6093
+  },
+  {
+    "business_id": "ytynqOUb3hjKeJfRj5Tshw",
+    "name": "Reading Terminal Market",
+    "city": "Philadelphia",
+    "state": "PA",
+    "stars": 4.5,
+    "review_count": 5721
+  },
+  {
+    "business_id": "oBNrLz4EDhiscSlbOl8uAw",
+    "name": "Ruby Slipper - New Orleans",
+    "city": "New Orleans",
+    "state": "LA",
+    "stars": 4.5,
+    "review_count": 5193
+  },
+  {
+    "business_id": "iSRTaT9WngzB8JJ2YKJUig",
+    "name": "Mother's Restaurant",
+    "city": "New Orleans",
+    "state": "LA",
+    "stars": 3.5,
+    "review_count": 5185
+  },
+  {
+    "business_id": "VQcCL9PiNL_wkGf-uF3fjg",
+    "name": "Royal House",
+    "city": "New Orleans",
+    "state": "LA",
+    "stars": 4.0,
+    "review_count": 5070
+  },
+  {
+    "business_id": "_C7QiQQc47AOEv4PE3Kong",
+    "name": "Commander's Palace",
+    "city": "New Orleans",
+    "state": "LA",
+    "stars": 4.5,
+    "review_count": 4876
+  },
+  {
+    "business_id": "GBTPC53ZrG1ZBY3DT8Mbcw",
+    "name": "Luke",
+    "city": "New Orleans",
+    "state": "LA",
+    "stars": 4.0,
+    "review_count": 4554
+  },
+  {
+    "business_id": "6a4gLLFSgr-Q6CZXDLzBGQ",
+    "name": "Cochon",
+    "city": "New Orleans",
+    "state": "LA",
+    "stars": 4.0,
+    "review_count": 4421
+  }
+]

@@ -1,0 +1,1022 @@
+[
+  {
+    "year_month": "2005-02",
+    "review_count": 3,
+    "avg_stars": 4.3333
+  },
+  {
+    "year_month": "2005-03",
+    "review_count": 74,
+    "avg_stars": 3.6486
+  },
+  {
+    "year_month": "2005-04",
+    "review_count": 26,
+    "avg_stars": 4.1538
+  },
+  {
+    "year_month": "2005-05",
+    "review_count": 108,
+    "avg_stars": 4.0833
+  },
+  {
+    "year_month": "2005-06",
+    "review_count": 38,
+    "avg_stars": 4.0263
+  },
+  {
+    "year_month": "2005-07",
+    "review_count": 259,
+    "avg_stars": 3.6718
+  },
+  {
+    "year_month": "2005-08",
+    "review_count": 66,
+    "avg_stars": 4.1667
+  },
+  {
+    "year_month": "2005-09",
+    "review_count": 69,
+    "avg_stars": 3.8841
+  },
+  {
+    "year_month": "2005-10",
+    "review_count": 39,
+    "avg_stars": 4.2051
+  },
+  {
+    "year_month": "2005-11",
+    "review_count": 70,
+    "avg_stars": 3.8429
+  },
+  {
+    "year_month": "2005-12",
+    "review_count": 102,
+    "avg_stars": 4.1078
+  },
+  {
+    "year_month": "2006-01",
+    "review_count": 221,
+    "avg_stars": 3.9864
+  },
+  {
+    "year_month": "2006-02",
+    "review_count": 185,
+    "avg_stars": 4.1297
+  },
+  {
+    "year_month": "2006-03",
+    "review_count": 191,
+    "avg_stars": 4.0524
+  },
+  {
+    "year_month": "2006-04",
+    "review_count": 196,
+    "avg_stars": 3.9184
+  },
+  {
+    "year_month": "2006-05",
+    "review_count": 224,
+    "avg_stars": 3.9643
+  },
+  {
+    "year_month": "2006-06",
+    "review_count": 180,
+    "avg_stars": 3.9944
+  },
+  {
+    "year_month": "2006-07",
+    "review_count": 389,
+    "avg_stars": 3.9666
+  },
+  {
+    "year_month": "2006-08",
+    "review_count": 492,
+    "avg_stars": 3.9756
+  },
+  {
+    "year_month": "2006-09",
+    "review_count": 461,
+    "avg_stars": 4.0325
+  },
+  {
+    "year_month": "2006-10",
+    "review_count": 433,
+    "avg_stars": 3.9284
+  },
+  {
+    "year_month": "2006-11",
+    "review_count": 426,
+    "avg_stars": 3.9108
+  },
+  {
+    "year_month": "2006-12",
+    "review_count": 455,
+    "avg_stars": 4.1187
+  },
+  {
+    "year_month": "2007-01",
+    "review_count": 802,
+    "avg_stars": 3.889
+  },
+  {
+    "year_month": "2007-02",
+    "review_count": 1420,
+    "avg_stars": 3.7063
+  },
+  {
+    "year_month": "2007-03",
+    "review_count": 1219,
+    "avg_stars": 3.7268
+  },
+  {
+    "year_month": "2007-04",
+    "review_count": 1111,
+    "avg_stars": 3.9298
+  },
+  {
+    "year_month": "2007-05",
+    "review_count": 908,
+    "avg_stars": 3.9262
+  },
+  {
+    "year_month": "2007-06",
+    "review_count": 1141,
+    "avg_stars": 3.9746
+  },
+  {
+    "year_month": "2007-07",
+    "review_count": 1660,
+    "avg_stars": 3.894
+  },
+  {
+    "year_month": "2007-08",
+    "review_count": 1665,
+    "avg_stars": 3.9592
+  },
+  {
+    "year_month": "2007-09",
+    "review_count": 1442,
+    "avg_stars": 3.9244
+  },
+  {
+    "year_month": "2007-10",
+    "review_count": 1429,
+    "avg_stars": 3.8223
+  },
+  {
+    "year_month": "2007-11",
+    "review_count": 1377,
+    "avg_stars": 3.8177
+  },
+  {
+    "year_month": "2007-12",
+    "review_count": 1189,
+    "avg_stars": 3.8217
+  },
+  {
+    "year_month": "2008-01",
+    "review_count": 2111,
+    "avg_stars": 3.8617
+  },
+  {
+    "year_month": "2008-02",
+    "review_count": 2228,
+    "avg_stars": 3.8766
+  },
+  {
+    "year_month": "2008-03",
+    "review_count": 2788,
+    "avg_stars": 3.8644
+  },
+  {
+    "year_month": "2008-04",
+    "review_count": 3745,
+    "avg_stars": 3.9055
+  },
+  {
+    "year_month": "2008-05",
+    "review_count": 3796,
+    "avg_stars": 3.937
+  },
+  {
+    "year_month": "2008-06",
+    "review_count": 4145,
+    "avg_stars": 3.7986
+  },
+  {
+    "year_month": "2008-07",
+    "review_count": 5211,
+    "avg_stars": 3.7354
+  },
+  {
+    "year_month": "2008-08",
+    "review_count": 5596,
+    "avg_stars": 3.7534
+  },
+  {
+    "year_month": "2008-09",
+    "review_count": 4611,
+    "avg_stars": 3.7463
+  },
+  {
+    "year_month": "2008-10",
+    "review_count": 4898,
+    "avg_stars": 3.743
+  },
+  {
+    "year_month": "2008-11",
+    "review_count": 4689,
+    "avg_stars": 3.7609
+  },
+  {
+    "year_month": "2008-12",
+    "review_count": 4408,
+    "avg_stars": 3.7691
+  },
+  {
+    "year_month": "2009-01",
+    "review_count": 5974,
+    "avg_stars": 3.7588
+  },
+  {
+    "year_month": "2009-02",
+    "review_count": 5058,
+    "avg_stars": 3.7032
+  },
+  {
+    "year_month": "2009-03",
+    "review_count": 6091,
+    "avg_stars": 3.723
+  },
+  {
+    "year_month": "2009-04",
+    "review_count": 5539,
+    "avg_stars": 3.7075
+  },
+  {
+    "year_month": "2009-05",
+    "review_count": 5513,
+    "avg_stars": 3.7009
+  },
+  {
+    "year_month": "2009-06",
+    "review_count": 5864,
+    "avg_stars": 3.7401
+  },
+  {
+    "year_month": "2009-07",
+    "review_count": 6844,
+    "avg_stars": 3.7136
+  },
+  {
+    "year_month": "2009-08",
+    "review_count": 7303,
+    "avg_stars": 3.7097
+  },
+  {
+    "year_month": "2009-09",
+    "review_count": 6462,
+    "avg_stars": 3.7334
+  },
+  {
+    "year_month": "2009-10",
+    "review_count": 6453,
+    "avg_stars": 3.7208
+  },
+  {
+    "year_month": "2009-11",
+    "review_count": 6570,
+    "avg_stars": 3.7353
+  },
+  {
+    "year_month": "2009-12",
+    "review_count": 6716,
+    "avg_stars": 3.6869
+  },
+  {
+    "year_month": "2010-01",
+    "review_count": 10745,
+    "avg_stars": 3.7151
+  },
+  {
+    "year_month": "2010-02",
+    "review_count": 9289,
+    "avg_stars": 3.7171
+  },
+  {
+    "year_month": "2010-03",
+    "review_count": 10586,
+    "avg_stars": 3.7244
+  },
+  {
+    "year_month": "2010-04",
+    "review_count": 9743,
+    "avg_stars": 3.7043
+  },
+  {
+    "year_month": "2010-05",
+    "review_count": 10135,
+    "avg_stars": 3.7223
+  },
+  {
+    "year_month": "2010-06",
+    "review_count": 10256,
+    "avg_stars": 3.7111
+  },
+  {
+    "year_month": "2010-07",
+    "review_count": 12554,
+    "avg_stars": 3.7452
+  },
+  {
+    "year_month": "2010-08",
+    "review_count": 13490,
+    "avg_stars": 3.7328
+  },
+  {
+    "year_month": "2010-09",
+    "review_count": 12621,
+    "avg_stars": 3.7136
+  },
+  {
+    "year_month": "2010-10",
+    "review_count": 12988,
+    "avg_stars": 3.7016
+  },
+  {
+    "year_month": "2010-11",
+    "review_count": 12875,
+    "avg_stars": 3.7515
+  },
+  {
+    "year_month": "2010-12",
+    "review_count": 13305,
+    "avg_stars": 3.7112
+  },
+  {
+    "year_month": "2011-01",
+    "review_count": 17766,
+    "avg_stars": 3.7363
+  },
+  {
+    "year_month": "2011-02",
+    "review_count": 16763,
+    "avg_stars": 3.7333
+  },
+  {
+    "year_month": "2011-03",
+    "review_count": 19571,
+    "avg_stars": 3.7376
+  },
+  {
+    "year_month": "2011-04",
+    "review_count": 18467,
+    "avg_stars": 3.7108
+  },
+  {
+    "year_month": "2011-05",
+    "review_count": 18971,
+    "avg_stars": 3.7016
+  },
+  {
+    "year_month": "2011-06",
+    "review_count": 19664,
+    "avg_stars": 3.7061
+  },
+  {
+    "year_month": "2011-07",
+    "review_count": 22397,
+    "avg_stars": 3.7074
+  },
+  {
+    "year_month": "2011-08",
+    "review_count": 21978,
+    "avg_stars": 3.713
+  },
+  {
+    "year_month": "2011-09",
+    "review_count": 19021,
+    "avg_stars": 3.6835
+  },
+  {
+    "year_month": "2011-10",
+    "review_count": 18351,
+    "avg_stars": 3.6794
+  },
+  {
+    "year_month": "2011-11",
+    "review_count": 19119,
+    "avg_stars": 3.68
+  },
+  {
+    "year_month": "2011-12",
+    "review_count": 18745,
+    "avg_stars": 3.6683
+  },
+  {
+    "year_month": "2012-01",
+    "review_count": 24760,
+    "avg_stars": 3.715
+  },
+  {
+    "year_month": "2012-02",
+    "review_count": 22946,
+    "avg_stars": 3.6914
+  },
+  {
+    "year_month": "2012-03",
+    "review_count": 24115,
+    "avg_stars": 3.68
+  },
+  {
+    "year_month": "2012-04",
+    "review_count": 22739,
+    "avg_stars": 3.6886
+  },
+  {
+    "year_month": "2012-05",
+    "review_count": 23057,
+    "avg_stars": 3.6625
+  },
+  {
+    "year_month": "2012-06",
+    "review_count": 24039,
+    "avg_stars": 3.6892
+  },
+  {
+    "year_month": "2012-07",
+    "review_count": 26276,
+    "avg_stars": 3.6703
+  },
+  {
+    "year_month": "2012-08",
+    "review_count": 24990,
+    "avg_stars": 3.6782
+  },
+  {
+    "year_month": "2012-09",
+    "review_count": 23147,
+    "avg_stars": 3.6746
+  },
+  {
+    "year_month": "2012-10",
+    "review_count": 23870,
+    "avg_stars": 3.6612
+  },
+  {
+    "year_month": "2012-11",
+    "review_count": 23184,
+    "avg_stars": 3.6808
+  },
+  {
+    "year_month": "2012-12",
+    "review_count": 23447,
+    "avg_stars": 3.6538
+  },
+  {
+    "year_month": "2013-01",
+    "review_count": 30683,
+    "avg_stars": 3.706
+  },
+  {
+    "year_month": "2013-02",
+    "review_count": 26903,
+    "avg_stars": 3.6729
+  },
+  {
+    "year_month": "2013-03",
+    "review_count": 31257,
+    "avg_stars": 3.6811
+  },
+  {
+    "year_month": "2013-04",
+    "review_count": 29867,
+    "avg_stars": 3.6756
+  },
+  {
+    "year_month": "2013-05",
+    "review_count": 30846,
+    "avg_stars": 3.6543
+  },
+  {
+    "year_month": "2013-06",
+    "review_count": 31067,
+    "avg_stars": 3.6694
+  },
+  {
+    "year_month": "2013-07",
+    "review_count": 33650,
+    "avg_stars": 3.6796
+  },
+  {
+    "year_month": "2013-08",
+    "review_count": 36543,
+    "avg_stars": 3.6924
+  },
+  {
+    "year_month": "2013-09",
+    "review_count": 33794,
+    "avg_stars": 3.6862
+  },
+  {
+    "year_month": "2013-10",
+    "review_count": 32929,
+    "avg_stars": 3.6864
+  },
+  {
+    "year_month": "2013-11",
+    "review_count": 33303,
+    "avg_stars": 3.7021
+  },
+  {
+    "year_month": "2013-12",
+    "review_count": 33108,
+    "avg_stars": 3.6927
+  },
+  {
+    "year_month": "2014-01",
+    "review_count": 39359,
+    "avg_stars": 3.742
+  },
+  {
+    "year_month": "2014-02",
+    "review_count": 35093,
+    "avg_stars": 3.7158
+  },
+  {
+    "year_month": "2014-03",
+    "review_count": 43159,
+    "avg_stars": 3.7352
+  },
+  {
+    "year_month": "2014-04",
+    "review_count": 40633,
+    "avg_stars": 3.7264
+  },
+  {
+    "year_month": "2014-05",
+    "review_count": 43917,
+    "avg_stars": 3.7156
+  },
+  {
+    "year_month": "2014-06",
+    "review_count": 43973,
+    "avg_stars": 3.7207
+  },
+  {
+    "year_month": "2014-07",
+    "review_count": 50066,
+    "avg_stars": 3.7179
+  },
+  {
+    "year_month": "2014-08",
+    "review_count": 50220,
+    "avg_stars": 3.7219
+  },
+  {
+    "year_month": "2014-09",
+    "review_count": 43419,
+    "avg_stars": 3.7221
+  },
+  {
+    "year_month": "2014-10",
+    "review_count": 44580,
+    "avg_stars": 3.7397
+  },
+  {
+    "year_month": "2014-11",
+    "review_count": 43462,
+    "avg_stars": 3.7305
+  },
+  {
+    "year_month": "2014-12",
+    "review_count": 44394,
+    "avg_stars": 3.6899
+  },
+  {
+    "year_month": "2015-01",
+    "review_count": 53951,
+    "avg_stars": 3.7498
+  },
+  {
+    "year_month": "2015-02",
+    "review_count": 49653,
+    "avg_stars": 3.7175
+  },
+  {
+    "year_month": "2015-03",
+    "review_count": 56777,
+    "avg_stars": 3.7173
+  },
+  {
+    "year_month": "2015-04",
+    "review_count": 54848,
+    "avg_stars": 3.7528
+  },
+  {
+    "year_month": "2015-05",
+    "review_count": 58458,
+    "avg_stars": 3.7234
+  },
+  {
+    "year_month": "2015-06",
+    "review_count": 59144,
+    "avg_stars": 3.7402
+  },
+  {
+    "year_month": "2015-07",
+    "review_count": 64940,
+    "avg_stars": 3.7597
+  },
+  {
+    "year_month": "2015-08",
+    "review_count": 65805,
+    "avg_stars": 3.7474
+  },
+  {
+    "year_month": "2015-09",
+    "review_count": 57164,
+    "avg_stars": 3.7496
+  },
+  {
+    "year_month": "2015-10",
+    "review_count": 58841,
+    "avg_stars": 3.7538
+  },
+  {
+    "year_month": "2015-11",
+    "review_count": 54646,
+    "avg_stars": 3.7697
+  },
+  {
+    "year_month": "2015-12",
+    "review_count": 54188,
+    "avg_stars": 3.7169
+  },
+  {
+    "year_month": "2016-01",
+    "review_count": 64985,
+    "avg_stars": 3.7821
+  },
+  {
+    "year_month": "2016-02",
+    "review_count": 64203,
+    "avg_stars": 3.7745
+  },
+  {
+    "year_month": "2016-03",
+    "review_count": 67500,
+    "avg_stars": 3.7843
+  },
+  {
+    "year_month": "2016-04",
+    "review_count": 63692,
+    "avg_stars": 3.7744
+  },
+  {
+    "year_month": "2016-05",
+    "review_count": 67510,
+    "avg_stars": 3.7569
+  },
+  {
+    "year_month": "2016-06",
+    "review_count": 65953,
+    "avg_stars": 3.761
+  },
+  {
+    "year_month": "2016-07",
+    "review_count": 71701,
+    "avg_stars": 3.7776
+  },
+  {
+    "year_month": "2016-08",
+    "review_count": 66458,
+    "avg_stars": 3.757
+  },
+  {
+    "year_month": "2016-09",
+    "review_count": 59203,
+    "avg_stars": 3.7445
+  },
+  {
+    "year_month": "2016-10",
+    "review_count": 58845,
+    "avg_stars": 3.7642
+  },
+  {
+    "year_month": "2016-11",
+    "review_count": 53115,
+    "avg_stars": 3.7623
+  },
+  {
+    "year_month": "2016-12",
+    "review_count": 55717,
+    "avg_stars": 3.7403
+  },
+  {
+    "year_month": "2017-01",
+    "review_count": 64055,
+    "avg_stars": 3.7964
+  },
+  {
+    "year_month": "2017-02",
+    "review_count": 61115,
+    "avg_stars": 3.7942
+  },
+  {
+    "year_month": "2017-03",
+    "review_count": 69808,
+    "avg_stars": 3.7814
+  },
+  {
+    "year_month": "2017-04",
+    "review_count": 69591,
+    "avg_stars": 3.7761
+  },
+  {
+    "year_month": "2017-05",
+    "review_count": 73519,
+    "avg_stars": 3.7583
+  },
+  {
+    "year_month": "2017-06",
+    "review_count": 74102,
+    "avg_stars": 3.7796
+  },
+  {
+    "year_month": "2017-07",
+    "review_count": 78306,
+    "avg_stars": 3.7864
+  },
+  {
+    "year_month": "2017-08",
+    "review_count": 72509,
+    "avg_stars": 3.7875
+  },
+  {
+    "year_month": "2017-09",
+    "review_count": 64806,
+    "avg_stars": 3.7632
+  },
+  {
+    "year_month": "2017-10",
+    "review_count": 67579,
+    "avg_stars": 3.7806
+  },
+  {
+    "year_month": "2017-11",
+    "review_count": 62136,
+    "avg_stars": 3.7943
+  },
+  {
+    "year_month": "2017-12",
+    "review_count": 62522,
+    "avg_stars": 3.7454
+  },
+  {
+    "year_month": "2018-01",
+    "review_count": 70316,
+    "avg_stars": 3.7975
+  },
+  {
+    "year_month": "2018-02",
+    "review_count": 67562,
+    "avg_stars": 3.7762
+  },
+  {
+    "year_month": "2018-03",
+    "review_count": 80995,
+    "avg_stars": 3.7923
+  },
+  {
+    "year_month": "2018-04",
+    "review_count": 78499,
+    "avg_stars": 3.8046
+  },
+  {
+    "year_month": "2018-05",
+    "review_count": 79434,
+    "avg_stars": 3.7677
+  },
+  {
+    "year_month": "2018-06",
+    "review_count": 80913,
+    "avg_stars": 3.7943
+  },
+  {
+    "year_month": "2018-07",
+    "review_count": 88911,
+    "avg_stars": 3.7916
+  },
+  {
+    "year_month": "2018-08",
+    "review_count": 80284,
+    "avg_stars": 3.7695
+  },
+  {
+    "year_month": "2018-09",
+    "review_count": 71713,
+    "avg_stars": 3.7671
+  },
+  {
+    "year_month": "2018-10",
+    "review_count": 71755,
+    "avg_stars": 3.7881
+  },
+  {
+    "year_month": "2018-11",
+    "review_count": 65915,
+    "avg_stars": 3.7843
+  },
+  {
+    "year_month": "2018-12",
+    "review_count": 70065,
+    "avg_stars": 3.734
+  },
+  {
+    "year_month": "2019-01",
+    "review_count": 74624,
+    "avg_stars": 3.8172
+  },
+  {
+    "year_month": "2019-02",
+    "review_count": 71618,
+    "avg_stars": 3.7807
+  },
+  {
+    "year_month": "2019-03",
+    "review_count": 84382,
+    "avg_stars": 3.765
+  },
+  {
+    "year_month": "2019-04",
+    "review_count": 77047,
+    "avg_stars": 3.7748
+  },
+  {
+    "year_month": "2019-05",
+    "review_count": 80542,
+    "avg_stars": 3.75
+  },
+  {
+    "year_month": "2019-06",
+    "review_count": 82446,
+    "avg_stars": 3.7586
+  },
+  {
+    "year_month": "2019-07",
+    "review_count": 83286,
+    "avg_stars": 3.7635
+  },
+  {
+    "year_month": "2019-08",
+    "review_count": 82113,
+    "avg_stars": 3.7878
+  },
+  {
+    "year_month": "2019-09",
+    "review_count": 72933,
+    "avg_stars": 3.7488
+  },
+  {
+    "year_month": "2019-10",
+    "review_count": 70620,
+    "avg_stars": 3.7664
+  },
+  {
+    "year_month": "2019-11",
+    "review_count": 63532,
+    "avg_stars": 3.7496
+  },
+  {
+    "year_month": "2019-12",
+    "review_count": 64141,
+    "avg_stars": 3.7292
+  },
+  {
+    "year_month": "2020-01",
+    "review_count": 67025,
+    "avg_stars": 3.7797
+  },
+  {
+    "year_month": "2020-02",
+    "review_count": 67201,
+    "avg_stars": 3.7893
+  },
+  {
+    "year_month": "2020-03",
+    "review_count": 45915,
+    "avg_stars": 3.8327
+  },
+  {
+    "year_month": "2020-04",
+    "review_count": 21947,
+    "avg_stars": 3.7658
+  },
+  {
+    "year_month": "2020-05",
+    "review_count": 31875,
+    "avg_stars": 3.7281
+  },
+  {
+    "year_month": "2020-06",
+    "review_count": 40966,
+    "avg_stars": 3.7332
+  },
+  {
+    "year_month": "2020-07",
+    "review_count": 47722,
+    "avg_stars": 3.7575
+  },
+  {
+    "year_month": "2020-08",
+    "review_count": 50433,
+    "avg_stars": 3.7745
+  },
+  {
+    "year_month": "2020-09",
+    "review_count": 48111,
+    "avg_stars": 3.7635
+  },
+  {
+    "year_month": "2020-10",
+    "review_count": 48895,
+    "avg_stars": 3.7838
+  },
+  {
+    "year_month": "2020-11",
+    "review_count": 41875,
+    "avg_stars": 3.8312
+  },
+  {
+    "year_month": "2020-12",
+    "review_count": 42592,
+    "avg_stars": 3.8301
+  },
+  {
+    "year_month": "2021-01",
+    "review_count": 45490,
+    "avg_stars": 3.8548
+  },
+  {
+    "year_month": "2021-02",
+    "review_count": 42885,
+    "avg_stars": 3.8088
+  },
+  {
+    "year_month": "2021-03",
+    "review_count": 54127,
+    "avg_stars": 3.7535
+  },
+  {
+    "year_month": "2021-04",
+    "review_count": 53781,
+    "avg_stars": 3.7148
+  },
+  {
+    "year_month": "2021-05",
+    "review_count": 57762,
+    "avg_stars": 3.6791
+  },
+  {
+    "year_month": "2021-06",
+    "review_count": 57846,
+    "avg_stars": 3.721
+  },
+  {
+    "year_month": "2021-07",
+    "review_count": 60455,
+    "avg_stars": 3.687
+  },
+  {
+    "year_month": "2021-08",
+    "review_count": 56439,
+    "avg_stars": 3.6448
+  },
+  {
+    "year_month": "2021-09",
+    "review_count": 46397,
+    "avg_stars": 3.6155
+  },
+  {
+    "year_month": "2021-10",
+    "review_count": 49304,
+    "avg_stars": 3.6547
+  },
+  {
+    "year_month": "2021-11",
+    "review_count": 45224,
+    "avg_stars": 3.675
+  },
+  {
+    "year_month": "2021-12",
+    "review_count": 48479,
+    "avg_stars": 3.6731
+  },
+  {
+    "year_month": "2022-01",
+    "review_count": 31665,
+    "avg_stars": 3.7045
+  }
+]
