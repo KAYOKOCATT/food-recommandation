@@ -39,7 +39,7 @@ def build_navigation(identity: SessionIdentity) -> list[dict[str, Any]]:
                 _item("statistics_recommendations", "热门推荐", "uim uim-star"), # 热门、星标
                 _item("food_list", "美食列表", "uim uim-list-ui-alt"), # 列表图标
                 _item("recommendations:yelp_business_list", "Yelp 餐厅发现", "uim uim-scenery"), # 发现/风景/图像
-                _item("recommendations:yelp_hot_recommendations", "Yelp 热门推荐", "uim uim-fire"),
+                _item("recommendations:yelp_hot_recommendations", "Yelp 热门推荐", "uim uim-signal-alt-3"),
             ],
         ),
     ]
@@ -51,7 +51,6 @@ def build_navigation(identity: SessionIdentity) -> list[dict[str, Any]]:
                 "个人中心",
                 [
                     _item("user_profile", "个人中心", "uim uim-document-layout-center"), # 类似个人信息卡片
-                    _item("recommendations:yelp_hot_recommendations", "Yelp 热门推荐", "uim uim-fire"),
                     _item("recommendations:yelp_recommendations", "Yelp 为你推荐", "uim uim-favorite"),
                     _item("recommendations:yelp_als_recommendations", "Yelp ALS 实验", "uim uim-graph-bar"),
                     _item("change_password", "修改密码", "uim uim-lock"), # 锁/密码
@@ -64,7 +63,7 @@ def build_navigation(identity: SessionIdentity) -> list[dict[str, Any]]:
             _section(
                 "演示入口",
                 [
-                    _item("recommendations:yelp_hot_recommendations", "Yelp 热门推荐", "uim uim-fire"),
+                    _item("recommendations:yelp_hot_recommendations", "Yelp 热门推荐", "uim uim-signal-alt-3"),
                     _item("recommendations:yelp_recommendations", "Yelp 为你推荐", "uim uim-favorite"), # 专属推荐
                     _item("recommendations:yelp_als_recommendations", "Yelp ALS 实验", "uim uim-graph-bar"),
                 ],
