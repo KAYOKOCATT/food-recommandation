@@ -19,6 +19,7 @@ def user_info(request) -> dict[str, Any]:
         "is_demo_login": identity.is_demo_login,
         "can_edit_profile": identity.is_local_user,
         "can_submit_interactions": identity.is_local_user,
+        "can_view_yelp_recommendations": identity.is_yelp_demo_user,
         "nav_menu": build_navigation(identity),
         "current_url_name": request.resolver_match.view_name if request.resolver_match else "",
     }

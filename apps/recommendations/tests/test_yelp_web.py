@@ -261,6 +261,27 @@ class YelpViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Alpha Sushi")
+        self.assertNotContains(response, "查看为你推荐")
+
+    def test_yelp_business_list_shows_recommendation_entry_for_yelp_demo_user(self) -> None:
+        demo_user = User.objects.create(
+            username="demo-user",
+            password="!",
+            email="demo@example.com",
+            phone="13800138998",
+            source="yelp",
+        )
+        session = self.client.session
+        session["user_id"] = demo_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "yelp_demo"
+        session["is_demo_login"] = True
+        session.save()
+
+        response = self.client.get("/api/v1/yelp/restaurants/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "查看为你推荐")
 
     def test_yelp_business_list_filters_by_query_and_city(self) -> None:
         response = self.client.get(

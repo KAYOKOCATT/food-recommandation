@@ -16,11 +16,11 @@ def build_navigation(identity: SessionIdentity) -> list[dict[str, Any]]:
             _section(
                 "管理入口",
                 [
-                    _item("admin_home", "后台首页", "uim uim-airplay"),
-                    _item("admin_user_list", "用户与认证", "uim uim-user"),
-                    _item("admin_food_list", "中文菜品", "uim uim-schedule"),
-                    _item("admin_food_ingestion", "数据采集", "uim uim-process"),
-                    _item("admin_yelp_business_list", "Yelp 数据", "uim uim-store"),
+                    _item("admin_home", "后台首页", "uim uim-airplay"),  # 仪表盘标准图标
+                    _item("admin_user_list", "用户与认证", "uim uim-lock-access"), # 模板中没有user，用lock-access代表权限与认证
+                    _item("admin_food_list", "中文菜品", "uim uim-th-large"), # 用网格/列表形式代表菜品库
+                    _item("admin_food_ingestion", "数据采集", "uim uim-process"), # 采集过程
+                    _item("admin_yelp_business_list", "Yelp 数据", "uim uim-briefcase"), # 商业/商家数据
                 ],
             ),
         ]
@@ -35,9 +35,9 @@ def build_navigation(identity: SessionIdentity) -> list[dict[str, Any]]:
         _section(
             "推荐",
             [
-                _item("statistics_recommendations", "热门推荐", "uim uim-star"),
-                _item("food_list", "美食列表", "uim uim-schedule"),
-                _item("recommendations:yelp_business_list", "Yelp 餐厅发现", "uim uim-store"),
+                _item("statistics_recommendations", "热门推荐", "uim uim-star"), # 热门、星标
+                _item("food_list", "美食列表", "uim uim-list-ui-alt"), # 列表图标
+                _item("recommendations:yelp_business_list", "Yelp 餐厅发现", "uim uim-scenery"), # 发现/风景/图像
             ],
         ),
     ]
@@ -48,10 +48,10 @@ def build_navigation(identity: SessionIdentity) -> list[dict[str, Any]]:
             _section(
                 "个人中心",
                 [
-                    _item("user_profile", "个人中心", "uim uim-user"),
-                    _item("usercf_recommendations", "为您推荐", "uim uim-schedule"),
-                    _item("change_password", "修改密码", "uim uim-lock"),
-                    _item("recommendations:dashboard", "数据可视化", "uim uim-chart-pie"),
+                    _item("user_profile", "个人中心", "uim uim-document-layout-center"), # 类似个人信息卡片
+                    _item("usercf_recommendations", "为您推荐", "uim uim-favorite"), # 专属喜欢
+                    _item("change_password", "修改密码", "uim uim-lock"), # 锁/密码
+                    _item("recommendations:dashboard", "数据可视化", "uim uim-chart-pie"), # 饼图
                 ],
             ),
         )
@@ -61,7 +61,7 @@ def build_navigation(identity: SessionIdentity) -> list[dict[str, Any]]:
             _section(
                 "演示入口",
                 [
-                    _item("recommendations:yelp_recommendations", "Yelp 为你推荐", "uim uim-thumbs-up"),
+                    _item("recommendations:yelp_recommendations", "Yelp 为你推荐", "uim uim-favorite"), # 专属推荐
                     _item("recommendations:dashboard", "数据可视化", "uim uim-chart-pie"),
                 ],
             ),
