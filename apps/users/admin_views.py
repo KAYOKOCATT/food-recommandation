@@ -72,7 +72,7 @@ def admin_home(request: HttpRequest) -> HttpResponse:
                 _card("商家", YelpBusiness.objects.count(), "admin_yelp_business_list"),
                 _card("评论", YelpReview.objects.count(), "admin_yelp_review_list"),
             ],
-        },
+        },        
     ]
     return render(
         request,

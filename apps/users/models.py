@@ -76,7 +76,7 @@ class User(models.Model):
         id: models.AutoField
 
 
-    username = models.CharField(max_length=255, verbose_name="用户名", unique=True)
+    username = models.CharField(max_length=64, verbose_name="用户名", unique=True)
     password = models.CharField(max_length=255, verbose_name="密码")
     email = models.CharField(max_length=100, null=True, blank=True)
     phone = models.CharField(max_length=11, null=True, blank=True)
