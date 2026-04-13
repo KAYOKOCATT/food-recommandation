@@ -25,6 +25,10 @@ class Command(BaseCommand):
         parser.add_argument("--max-iter", type=int, default=10)
         parser.add_argument("--reg-param", type=float, default=0.1)
         parser.add_argument("--top-k", type=int, default=20)
+        parser.add_argument("--target-user-count", type=int, default=30000)
+        parser.add_argument("--target-review-count", type=int, default=300000)
+        parser.add_argument("--min-business-review-count", type=int, default=10)
+        parser.add_argument("--min-user-review-count", type=int, default=5)
 
     def handle(self, *args: Any, **options: Any) -> None:
         try:
@@ -35,6 +39,10 @@ class Command(BaseCommand):
                 max_iter=max(int(options["max_iter"]), 1),
                 reg_param=float(options["reg_param"]),
                 top_k=max(int(options["top_k"]), 1),
+                target_user_count=max(int(options["target_user_count"]), 1),
+                target_review_count=max(int(options["target_review_count"]), 1),
+                min_business_review_count=max(int(options["min_business_review_count"]), 1),
+                min_user_review_count=max(int(options["min_user_review_count"]), 1),
             )
         except (FileNotFoundError, RuntimeError) as exc:
             raise CommandError(str(exc)) from exc

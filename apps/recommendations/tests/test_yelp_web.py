@@ -1194,4 +1194,8 @@ class YelpSparkCommandTests(TestCase):
             max_iter=6,
             reg_param=0.2,
             top_k=5,
+            target_user_count=30000,
+            target_review_count=300000,
+            min_business_review_count=10,
+            min_user_review_count=5,
         )

@@ -324,12 +324,16 @@ Yelp Spark ALS 命令：
 ```bash
 # 从 archive_4 原始 Yelp JSONL 直接训练 Spark ALS
 python manage.py build_yelp_spark_als --data-dir data/archive_4 --output data/recommendations/yelp_als_userrec.json
+
+# 单机 16G 内存建议显式加构建集边界
+python manage.py build_yelp_spark_als --data-dir data/archive_4 --output data/recommendations/yelp_als_userrec.json --target-user-count 30000 --target-review-count 300000 --min-business-review-count 10 --min-user-review-count 5
 ```
 
 说明：
 
 - 输入数据源是 `archive_4` 下的原始 `business.json` 与 `review.json`。
 - ALS 只保留餐厅类 business 对应的 review 交互，不直接使用全量非餐饮商家。
+- 单机环境默认增加了用户数、交互数和活跃度边界，避免 ALS 训练与结果落盘阶段直接 OOM。
 - 在线页读取 ALS 结果时，优先使用 `User.external_user_id` 对齐原始 Yelp 用户。
 - 在线默认推荐页不会依赖 ALS；ALS 结果只用于独立实验页和答辩展示。
 
