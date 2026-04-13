@@ -1,18 +1,50 @@
 {% extends 'layout.html' %}
 {% block content %}
-    <div class="page-content">
-        <!-- Page-Title -->
-        <div class="page-title-box">
-            <div class="container-fluid">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h4 class="page-title mb-1">首页</h4>
-                        <ol class="breadcrumb m-0">
-                            <li class="breadcrumb-item active">欢迎餐饮推荐系统</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
+  <div class="page-content">
+    <div class="page-title-box">
+      <div class="container-fluid">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h4 class="page-title mb-1">首页</h4>
+            <ol class="breadcrumb m-0">
+              <li class="breadcrumb-item active">欢迎餐饮推荐系统</li>
+            </ol>
+          </div>
         </div>
+      </div>
     </div>
+    <div class="page-content-wrapper">
+      <div class="container-fluid">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title mb-2">中文菜品推荐语词云</h5>
+            <p class="text-muted small mb-3">数据来源：<code>Foods.recommend</code> 离线统计结果。</p>
+            {% if food_wordcloud_available %}
+              <img
+                src="{% url 'home_wordcloud_image' 'food' %}"
+                alt="中文菜品推荐语词云"
+                class="img-fluid border rounded">
+            {% else %}
+              <div class="alert alert-light border mb-0">词云尚未生成，请先运行离线构建命令。</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title mb-2">Yelp 餐厅评论词云</h5>
+            <p class="text-muted small mb-3">数据来源：<code>YelpReview.text</code> 的离线 TF-IDF 词权重。</p>
+            {% if yelp_wordcloud_available %}
+              <img
+                src="{% url 'home_wordcloud_image' 'yelp' %}"
+                alt="Yelp 餐厅评论词云"
+                class="img-fluid border rounded">
+            {% else %}
+              <div class="alert alert-light border mb-0">词云尚未生成，请先运行离线构建命令。</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}

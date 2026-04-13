@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import json
+import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
 from django.contrib.auth.hashers import check_password
 from django.db import connection
-from django.test import Client, TestCase
+from django.test import Client, TestCase, TransactionTestCase
 from django.test.utils import CaptureQueriesContext
 
 from apps.foods.models import Collect, Comment, Foods
 from apps.foods.ingestion import CrawlResult, ImportResult
 from apps.recommendations.models import YelpBusiness, YelpReview
+from apps.recommendations.services.home_wordcloud_service import HomeWordCloudService
 from apps.users.demo_candidates import YelpDemoCandidate
 from apps.users.models import User
 
@@ -169,6 +171,33 @@ class AuthFlowTests(TestCase):
         all_labels = [item["label"] for section in nav_menu for item in section["items"]]
         self.assertIn("Yelp 为你推荐", all_labels)
         self.assertNotIn("个人中心", all_labels)
+
+    def test_user_home_renders_wordcloud_cards(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.local_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "local"
+        session["is_demo_login"] = False
+        session.save()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            data_dir = Path(temp_dir)
+            food_path = data_dir / "home_food_recommend_wordcloud.png"
+            yelp_path = data_dir / "home_yelp_review_wordcloud.png"
+            food_path.write_bytes(b"food-png")
+            yelp_path.write_bytes(b"yelp-png")
+            with patch.object(HomeWordCloudService, "FOOD_WORDCLOUD_FILE", food_path), patch.object(
+                HomeWordCloudService,
+                "YELP_WORDCLOUD_FILE",
+                yelp_path,
+            ):
+                response = self.client.get("/api/v1/users/home/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "中文菜品推荐语词云")
+        self.assertContains(response, "Yelp 餐厅评论词云")
+        self.assertContains(response, "/api/v1/users/home/wordclouds/food/")
+        self.assertContains(response, "/api/v1/users/home/wordclouds/yelp/")
 
 
 class AdminCrudTests(TestCase):
@@ -360,3 +389,47 @@ class AdminCrudTests(TestCase):
         self.assertEqual(response.status_code, 200)
         mocked_import.assert_called_once_with(clear_existing=True)
         self.assertContains(response, "新增 8 条菜品")
+
+
+class HomeWordCloudEndpointTests(TransactionTestCase):
+    def setUp(self) -> None:
+        self.client = Client()
+        self.local_user = User.objects.create(
+            username="endpoint-user",
+            password="secret123",
+            email="endpoint@example.com",
+            phone="13800138996",
+        )
+
+    def _login_local(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.local_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "local"
+        session["is_demo_login"] = False
+        session.save()
+
+    def test_home_wordcloud_image_returns_png_response(self) -> None:
+        self._login_local()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            image_path = Path(temp_dir) / "home_food_recommend_wordcloud.png"
+            image_path.write_bytes(b"\x89PNG\r\n\x1a\nfake")
+            with patch.object(HomeWordCloudService, "FOOD_WORDCLOUD_FILE", image_path):
+                response = self.client.get("/api/v1/users/home/wordclouds/food/")
+                payload = b"".join(response.streaming_content)
+                response.close()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/png")
+        self.assertTrue(payload.startswith(b"\x89PNG"))
+
+    def test_home_wordcloud_image_returns_404_when_missing(self) -> None:
+        self._login_local()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            image_path = Path(temp_dir) / "missing.png"
+            with patch.object(HomeWordCloudService, "YELP_WORDCLOUD_FILE", image_path):
+                response = self.client.get("/api/v1/users/home/wordclouds/yelp/")
+
+        self.assertEqual(response.status_code, 404)

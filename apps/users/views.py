@@ -30,7 +30,7 @@ from typing import Optional, Union
 
 from django import forms
 from django.contrib.auth.hashers import check_password, make_password
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from config import settings
 
@@ -38,6 +38,7 @@ from apps.users.demo_candidates import (
     candidate_user_ids,
     load_yelp_demo_candidates,
 )
+from apps.recommendations.services import HomeWordCloudService
 from apps.users.models import User
 from apps.users.session_auth import (
     build_identity,
@@ -279,7 +280,34 @@ def user_index(request):
     )
     if isinstance(identity, HttpResponse):
         return identity
-    return render(request, 'auth/user_index.html')
+    return render(
+        request,
+        'auth/user_index.html',
+        {
+            "food_wordcloud_available": HomeWordCloudService.image_exists("food"),
+            "yelp_wordcloud_available": HomeWordCloudService.image_exists("yelp"),
+        },
+    )
+
+
+def home_wordcloud_image(request: HttpRequest, kind: str) -> FileResponse:
+    identity = require_identity(
+        request,
+        allow_local_user=True,
+        allow_yelp_demo_user=True,
+    )
+    if isinstance(identity, HttpResponse):
+        return identity
+
+    try:
+        image_path = HomeWordCloudService.get_image_path(kind)
+    except ValueError as exc:
+        raise Http404("Unsupported wordcloud kind") from exc
+
+    if not image_path.exists():
+        raise Http404("Wordcloud image not found")
+
+    return FileResponse(image_path.open("rb"), content_type="image/png")
 
 def logout(request):
     request.session.flush()
