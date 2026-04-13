@@ -50,6 +50,7 @@ def build_navigation(identity: SessionIdentity) -> list[dict[str, Any]]:
                 [
                     _item("user_profile", "个人中心", "uim uim-document-layout-center"), # 类似个人信息卡片
                     _item("usercf_recommendations", "为您推荐", "uim uim-favorite"), # 专属喜欢
+                    _item("recommendations:yelp_recommendations", "Yelp 为你推荐", "uim uim-favorite"),
                     _item("change_password", "修改密码", "uim uim-lock"), # 锁/密码
                     _item("recommendations:dashboard", "数据可视化", "uim uim-chart-pie"), # 饼图
                 ],

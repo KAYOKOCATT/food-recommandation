@@ -59,7 +59,12 @@ def _session_user(request: HttpRequest) -> User | None:
 
 @require_POST
 def submit_yelp_review(request: HttpRequest, business_id: str) -> JsonResponse:
-    identity = require_identity(request, allow_local_user=True, api=True)
+    identity = require_identity(
+        request,
+        allow_local_user=True,
+        allow_yelp_demo_user=True,
+        api=True,
+    )
     if isinstance(identity, JsonResponse):
         return identity
     user = identity.user

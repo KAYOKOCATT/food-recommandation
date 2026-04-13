@@ -51,7 +51,7 @@
                 <div class="d-flex align-items-center justify-content-between mb-3">
                   <div>
                     <h4 class="card-title mb-1">提交评分</h4>
-                    <p class="text-muted small mb-0">站内登录用户可提交评分，可选填写评论文本</p>
+                    <p class="text-muted small mb-0">已登录用户可提交评分，可选填写评论文本</p>
                   </div>
                 </div>
                 {% if can_submit_interactions %}
@@ -88,7 +88,7 @@
                     <div id="reviewFeedback" class="small mt-3" style="display:none;"></div>
                   </form>
                 {% elif current_user %}
-                  <div class="alert alert-light border mb-0">当前为演示账号，仅支持浏览和查看推荐，不开放站内评分写入。</div>
+                  <div class="alert alert-light border mb-0">当前身份无权提交评分，请使用可写入的用户身份登录。</div>
                 {% else %}
                   <div class="alert alert-light border mb-0">登录后可提交餐厅评分和评论。</div>
                 {% endif %}

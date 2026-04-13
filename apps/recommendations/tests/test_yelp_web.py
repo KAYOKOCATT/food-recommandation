@@ -283,6 +283,19 @@ class YelpViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "查看为你推荐")
 
+    def test_yelp_business_list_shows_recommendation_entry_for_local_user(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "local"
+        session["is_demo_login"] = False
+        session.save()
+
+        response = self.client.get("/api/v1/yelp/restaurants/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "查看为你推荐")
+
     def test_yelp_business_list_filters_by_query_and_city(self) -> None:
         response = self.client.get(
             "/api/v1/yelp/restaurants/",
@@ -406,6 +419,27 @@ class YelpViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "当前餐厅暂无相似推荐。")
 
+    def test_yelp_business_detail_allows_yelp_demo_user_to_submit_review(self) -> None:
+        demo_user = User.objects.create(
+            username="demo-user-write",
+            password="!",
+            email="demo-write@example.com",
+            phone="13800138997",
+            source="yelp",
+        )
+        session = self.client.session
+        session["user_id"] = demo_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "yelp_demo"
+        session["is_demo_login"] = True
+        session.save()
+
+        response = self.client.get(f"/api/v1/yelp/restaurants/{self.business.business_id}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "已登录用户可提交评分")
+        self.assertContains(response, "提交评分")
+
     def test_submit_yelp_review_requires_login(self) -> None:
         response = self.client.post(
             f"/api/v1/yelp/restaurants/{self.business.business_id}/review/",
@@ -459,7 +493,7 @@ class YelpViewTests(TestCase):
         self.assertEqual(local_reviews[1].text, "Actually great")
         self.assertEqual(self.business.aggregated_review_count, 3)
 
-    def test_submit_yelp_review_forbids_yelp_demo_user(self) -> None:
+    def test_submit_yelp_review_allows_yelp_demo_user(self) -> None:
         demo_user = User.objects.create(
             username="demo-user",
             password="!",
@@ -479,7 +513,15 @@ class YelpViewTests(TestCase):
             {"stars": "5", "comment": "Love it"},
         )
 
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            YelpReview.objects.filter(
+                business=self.business,
+                user=demo_user,
+                source="local",
+            ).count(),
+            1,
+        )
 
     def test_yelp_recommendations_uses_recent_activity_copy(self) -> None:
         session = self.client.session
@@ -539,6 +581,58 @@ class YelpViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "以下先展示热门餐厅作为兜底结果。")
         self.assertContains(response, "Alpha Sushi")
+
+    def test_yelp_recommendations_renders_for_yelp_demo_user_with_local_review(self) -> None:
+        demo_user = User.objects.create(
+            username="demo-user-recent",
+            password="!",
+            email="demo-recent@example.com",
+            phone="13800138996",
+            source="yelp",
+        )
+        session = self.client.session
+        session["user_id"] = demo_user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "yelp_demo"
+        session["is_demo_login"] = True
+        session.save()
+
+        candidate_business = YelpBusiness.objects.create(
+            business_id="recent-demo-rec",
+            name="Demo Recent Sushi",
+            categories="Restaurants, Japanese",
+            stars=4.8,
+            review_count=320,
+            city="Philadelphia",
+            state="PA",
+            is_open=True,
+        )
+        YelpReview.objects.create(
+            review_id="demo_local_recent_review",
+            business=self.business,
+            user=demo_user,
+            stars=4.0,
+            source="local",
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            similarity_path = Path(temp_dir) / "yelp_content_itemcf.json"
+            similarity_path.write_text(
+                json.dumps(
+                    {
+                        "b1": [
+                            {"business_id": candidate_business.business_id, "score": 0.93}
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with patch.object(YelpService, "SIMILARITY_FILE", similarity_path):
+                response = self.client.get("/api/v1/yelp/recommendations/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "基于你最近评分过的餐厅生成")
+        self.assertContains(response, "Demo Recent Sushi")
 
 
 class YelpReviewUserCFCommandTests(TestCase):
