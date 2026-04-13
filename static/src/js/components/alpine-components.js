@@ -188,7 +188,18 @@ export function loginForm() {
 
     async onSuccess(response) {
       logger.success("Login successful", response);
+      showBrowserAlert(response.msg || "登录成功");
       redirectWithNotification(response, "登录成功");
+    },
+
+    async onError(error) {
+      const message =
+        error.data?.error ||
+        error.data?.msg ||
+        error.message ||
+        "登录失败，请稍后重试";
+      showBrowserAlert(message);
+      this.handleError(error);
     }
   });
 
@@ -305,6 +316,10 @@ function redirectWithNotification(response, fallbackMessage) {
   setTimeout(() => {
     window.location.href = response.data?.redirect || "/";
   }, 1200);
+}
+
+function showBrowserAlert(message) {
+  window.alert(message);
 }
 
 /**

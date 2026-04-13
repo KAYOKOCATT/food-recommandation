@@ -269,6 +269,7 @@ export function registerForm() {
       if (!this.validateForm(true)) {
         logger.warn("Form validation failed", this.errors);
         this.showNotification("Please correct the errors in the form", "error");
+        window.alert("请先修正表单中的错误");
         return;
       }
 
@@ -278,6 +279,7 @@ export function registerForm() {
           "Please agree to the Terms of Service and Privacy Policy",
           "warning"
         );
+        window.alert("请先同意服务条款和隐私政策");
         return;
       }
 
@@ -293,6 +295,7 @@ export function registerForm() {
         });
 
         logger.success("Registration successful", response);
+        window.alert(response.msg || "注册成功");
 
         // Show success notification
         this.showNotification(
@@ -313,6 +316,7 @@ export function registerForm() {
         // Handle server errors
         if (error.data && (error.data.error || error.data.msg)) {
           const errorMsg = error.data.error || error.data.msg;
+          window.alert(errorMsg);
 
           // Show error notification
           this.showNotification(errorMsg, "error");
@@ -321,6 +325,7 @@ export function registerForm() {
           this.mapServerError(errorMsg);
         } else {
           // Network or unknown error
+          window.alert("网络错误，请稍后重试");
           this.showNotification(
             "Network error, please try again later",
             "error"
