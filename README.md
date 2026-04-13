@@ -12,6 +12,12 @@
 
 当前路线是：中文菜品做统计推荐和演示型收藏协同过滤，Yelp 餐厅做内容推荐和邻域协同过滤，实时推荐只做基于最近评分行为的离线候选重排。Yelp v1 已支持独立数据入库、餐厅发现/详情页、基于离线内容相似度的相似餐厅展示、基于近期评分的热 rank 推荐页，以及 Yelp 演示账号免密登录。普通用户首页当前也已接入两张离线词云图：`Foods.recommend` 中文词云和 `YelpReview.text` 的 Yelp 评论词云。登录页当前不再实时聚合全量 Yelp 用户，而是读取离线刷新后的演示账号候选 JSON。
 
+为满足毕设答辩中的“大数据组件”展示需求，当前版本又新增了 Spark 离线批处理层：
+
+- `build_yelp_spark_stats`：从 Yelp 原始 JSONL 构建热门榜、城市榜、月度评论趋势等统计产物。
+- `build_yelp_spark_als`：从 `YelpReview` 评分交互构建 `yelp_als_userrec.json`。
+- Web 侧新增独立的 Yelp ALS 实验推荐页，但默认推荐页仍保持“近期行为 + 内容相似 + 热门兜底”。
+
 ## 技术栈
 
 | 层级 | 技术选型 | 说明 |
@@ -20,6 +26,7 @@
 | 数据库 | MySQL 8.0 | 用户、菜品、收藏、评论等业务数据 |
 | 数据处理 | Pandas + NumPy | 离线数据处理与特征工程 |
 | 算法库 | scikit-learn | TF-IDF、相似度计算、邻域推荐 |
+| 大数据批处理 | Spark / PySpark | Yelp 原始数据离线统计、ALS 模型训练 |
 | 前端 | HTML/CSS/JavaScript + jQuery | 主要沿用管理后台静态模板 |
 | 可选前端增强 | Alpine.js + HTMX | 目前主要用于登录/注册页，不作为后续核心投入 |
 
@@ -133,21 +140,43 @@ import_yelp_data
         v
 MySQL: YelpBusiness / YelpReview / users.User(source=yelp)
         |
-        +------------------------------+-----------------------------+
-        |                              |                             |
-        v                              v                             v
-餐厅列表 / 详情 ORM 查询         build_yelp_content_recs      build_yelp_review_usercf
-        |                              |                             |
-        |                              v                             v
-        |                      yelp_content_itemcf.json       yelp_usercf.json
-        |                              |                             |
-        +------------------------------+-----------------------------+
+        +---------------------+--------------------+-----------------------------+-------------------------+
+        |                     |                    |                             |
+        v                     v                    v                             v
+餐厅列表 / 详情 ORM 查询  build_yelp_content_recs  build_yelp_review_usercf   build_yelp_spark_als
+        |                     |                    |                             |
+        |                     v                    v                             v
+        |             yelp_content_itemcf.json  yelp_usercf.json         yelp_als_userrec.json
+        |                     |                    |                             |
+        +---------------------+--------------------+-----------------------------+
                                        |
                                        v
                      apps.recommendations.services.YelpService
                                        |
                                        v
-         Yelp 餐厅发现页 / 餐厅详情页 / 相似餐厅推荐 / 近期行为推荐页
+  Yelp 餐厅发现页 / 餐厅详情页 / 相似餐厅推荐 / 近期行为推荐页 / ALS 实验推荐页
+```
+
+### Spark 离线批处理链路
+
+```text
+Yelp 原始数据(JSONL)
+        |
+        v
+apps.recommendations.spark_jobs
+  - build_stats.py
+  - build_als.py
+        |
+        +------------------------------+
+        |                              |
+        v                              v
+yelp_spark_hot.json /            yelp_als_userrec.json
+yelp_spark_city_top.json /               |
+yelp_spark_monthly_stats.json            v
+        |                      YelpService.get_als_recommendations
+        v                              |
+    图表/答辩展示页                      v
+                               Yelp ALS 实验推荐页
 ```
 
 ### 图表与推荐支撑链路
@@ -176,15 +205,18 @@ Dashboard / Yelp 页面 / 推荐页面
 2. 中文菜品收藏协同过滤：基于 `Collect(user_id, food_id)` 生成 0/1 隐式反馈矩阵，实现演示型 ItemCF/UserCF。收藏数据可以用命令生成，但必须标注为模拟数据，不作为真实效果评估依据。
 3. Yelp 餐厅内容推荐：基于 business/categories/review/tip 等文本和属性做 TF-IDF 特征，离线生成相似餐厅。
 4. Yelp 餐厅协同过滤：基于 review 评分构造 user-business 矩阵，实现 UserCF/ItemCF 这类邻域算法，不把矩阵分解作为 v1 主线。评分版 UserCF 命令保留为离线实验能力，不再作为 Yelp Web 主页面运行时依赖。
-5. 实时重排：根据用户最近评分过的餐厅，读取离线相似度候选，用简单权重合并、去重和热度混排，不在线训练模型。
+5. Yelp ALS 实验推荐：使用 Spark ALS 离线训练矩阵分解模型，生成用户到餐厅的推荐 JSON，作为独立实验链路，不替换默认推荐页。
+6. 实时重排：根据用户最近评分过的餐厅，读取离线相似度候选，用简单权重合并、去重和热度混排，不在线训练模型。
 
 运行时数据边界：
 
 - `YelpBusiness` / `YelpReview` 负责 Yelp 页面展示、图表统计、地理分布、近期评分行为等 ORM 查询。
 - `data/recommendations/yelp_content_itemcf.json` 负责离线相似餐厅候选，同时作为近期行为重排的候选来源。
 - `data/recommendations/yelp_usercf.json` 保留为 Yelp 用户到候选餐厅的离线 UserCF 实验结果，不作为主页面运行时依赖。
+- `data/recommendations/yelp_als_userrec.json` 保留为 Spark ALS 离线实验结果，由独立 ALS 页面读取。
 - `data/recommendations/yelp_demo_users.json` 负责登录页 Yelp 演示账号候选，不在请求链路里实时做全量评论聚合。
 - `data/recommendations/yelp_business_profiles.json` 仅保留为离线构建的调试/检查产物，不作为页面或图表运行时依赖。
+- `data/recommendations/yelp_spark_hot.json` / `yelp_spark_city_top.json` / `yelp_spark_monthly_stats.json` 负责 Spark 统计实验产物，服务答辩中的大数据处理说明。
 - `data/recommendations/home_food_recommend_wordcloud.png` / `home_yelp_review_wordcloud.png` 负责首页两张词云图，页面运行时只读图片文件，不在线重新计算。
 
 核心运行时产物对照：
@@ -195,6 +227,8 @@ Dashboard / Yelp 页面 / 推荐页面
 | `food_usercf.json` | `build_food_collect_cf` | 中文菜品 UserCF 推荐页 |
 | `yelp_content_itemcf.json` | `build_yelp_content_recs` | Yelp 详情页相似餐厅、近期行为重排候选 |
 | `yelp_usercf.json` | `build_yelp_review_usercf` | Yelp UserCF 离线实验结果，默认不进入主页面链路 |
+| `yelp_als_userrec.json` | `build_yelp_spark_als` | Yelp ALS 实验推荐页 |
+| `yelp_spark_hot.json` 等 | `build_yelp_spark_stats` | Spark 统计实验与答辩展示 |
 | `yelp_demo_users.json` | `refresh_yelp_demo_users` | 登录页 Yelp 演示账号候选 |
 | `home_food_recommend_wordcloud.png` | `build_home_wordclouds` | 首页中文词云图 |
 | `home_yelp_review_wordcloud.png` | `build_home_wordclouds` | 首页 Yelp 评论词云图 |
@@ -271,6 +305,36 @@ python manage.py build_yelp_review_usercf --min-user-reviews 5 --min-business-re
 
 - `data/recommendations/yelp_usercf.json`：Yelp 用户到候选餐厅的离线 UserCF 实验结果。
 - `dev-demo` / `balanced` / `large` 三个 profile 分别对应更小到更大的默认构建集；如需精确控制，可直接传 `--target-user-count` 与 `--target-review-count`。
+
+Yelp Spark 统计命令：
+
+```bash
+# 从 Yelp 原始 JSONL 构建 Spark SQL 统计产物
+python manage.py build_yelp_spark_stats --data-dir data/archive_4 --output-dir data/recommendations
+```
+
+默认输出：
+
+- `data/recommendations/yelp_spark_hot.json`：热门餐厅榜单。
+- `data/recommendations/yelp_spark_city_top.json`：按城市划分的热门餐厅榜单。
+- `data/recommendations/yelp_spark_monthly_stats.json`：按月份聚合的评论趋势统计。
+
+Yelp Spark ALS 命令：
+
+```bash
+# 从数据库中的 YelpReview(stars) 导出交互并调用 Spark ALS
+python manage.py build_yelp_spark_als --output data/recommendations/yelp_als_userrec.json
+```
+
+说明：
+
+- 输入数据源是数据库中的 `YelpReview`。
+- 若同一用户对同一餐厅存在多条评论，导出到 ALS 前会按“最新一条评分”聚合。
+- 在线默认推荐页不会依赖 ALS；ALS 结果只用于独立实验页和答辩展示。
+
+默认输出：
+
+- `data/recommendations/yelp_als_userrec.json`：Spark ALS 生成的用户到餐厅推荐结果。
 
 Yelp 演示账号候选刷新命令：
 
@@ -402,6 +466,7 @@ python manage.py runserver
 - Yelp 餐厅发现：`/api/v1/yelp/restaurants/`
 - Yelp 餐厅详情：`/api/v1/yelp/restaurants/<business_id>/`
 - Yelp 为你推荐：`/api/v1/yelp/recommendations/`
+- Yelp ALS 实验推荐：`/api/v1/yelp/recommendations/als/`
 - 数据可视化：`/api/v1/charts/dashboard/`
 
 ## 质量检查

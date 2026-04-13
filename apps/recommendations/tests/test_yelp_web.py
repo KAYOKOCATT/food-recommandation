@@ -156,6 +156,55 @@ class YelpServiceTests(TestCase):
 
         self.assertEqual(result, [])
 
+    def test_get_als_recommendations_hydrates_from_json_and_skips_seen(self) -> None:
+        user = User.objects.create(
+            username="als-user",
+            password="secret123",
+            email="als@example.com",
+            phone="13800138009",
+        )
+        YelpReview.objects.create(
+            review_id="als_seen_r1",
+            business=self.business_1,
+            user=user,
+            stars=5.0,
+            source="local",
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            recommendation_path = Path(temp_dir) / "yelp_als_userrec.json"
+            recommendation_path.write_text(
+                json.dumps(
+                    {
+                        str(user.id): [
+                            {"business_id": "b1", "score": 4.9},
+                            {"business_id": "b2", "score": 4.7},
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = YelpService.get_als_recommendations(
+                user.id,
+                top_k=5,
+                recommendation_file=recommendation_path,
+            )
+
+        self.assertEqual([item.business.business_id for item in result], ["b2"])
+
+    def test_get_als_recommendations_returns_empty_when_json_is_invalid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            recommendation_path = Path(temp_dir) / "yelp_als_userrec.json"
+            recommendation_path.write_text("{invalid", encoding="utf-8")
+
+            result = YelpService.get_als_recommendations(
+                1,
+                recommendation_file=recommendation_path,
+            )
+
+        self.assertEqual(result, [])
+
     def test_get_recent_recommendations_uses_recent_reviews_and_similarity(self) -> None:
         user = User.objects.create(
             username="recent-user",
@@ -634,6 +683,62 @@ class YelpViewTests(TestCase):
         self.assertContains(response, "基于你最近评分过的餐厅生成")
         self.assertContains(response, "Demo Recent Sushi")
 
+    def test_yelp_als_recommendations_renders_model_results(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "local"
+        session["is_demo_login"] = False
+        session.save()
+
+        candidate_business = YelpBusiness.objects.create(
+            business_id="als-rec",
+            name="ALS Rank Sushi",
+            categories="Restaurants, Japanese",
+            stars=4.7,
+            review_count=410,
+            city="Philadelphia",
+            state="PA",
+            is_open=True,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            recommendation_path = Path(temp_dir) / "yelp_als_userrec.json"
+            recommendation_path.write_text(
+                json.dumps(
+                    {
+                        str(self.user.id): [
+                            {
+                                "business_id": candidate_business.business_id,
+                                "score": 4.88,
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with patch.object(YelpService, "ALS_FILE", recommendation_path):
+                response = self.client.get("/api/v1/yelp/recommendations/als/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "基于 Spark ALS 离线模型生成")
+        self.assertContains(response, "ALS Rank Sushi")
+        self.assertNotContains(response, "实验页兜底结果")
+
+    def test_yelp_als_recommendations_falls_back_to_popular_when_missing(self) -> None:
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session["auth_role"] = "user"
+        session["login_source"] = "local"
+        session["is_demo_login"] = False
+        session.save()
+
+        response = self.client.get("/api/v1/yelp/recommendations/als/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "实验页兜底结果")
+        self.assertContains(response, "Alpha Sushi")
+
 
 class YelpReviewUserCFCommandTests(TestCase):
     def setUp(self) -> None:
@@ -864,3 +969,101 @@ class YelpReviewUserCFCommandTests(TestCase):
             payload = json.loads(output_path.read_text(encoding="utf-8"))
 
         self.assertNotIn(str(user_4.id), payload)
+
+
+class YelpSparkCommandTests(TestCase):
+    def test_build_yelp_spark_stats_delegates_to_job_module(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir) / "recs"
+            expected = {
+                "hot": output_dir / "yelp_spark_hot.json",
+                "city_top": output_dir / "yelp_spark_city_top.json",
+                "monthly_stats": output_dir / "yelp_spark_monthly_stats.json",
+            }
+            with patch(
+                "apps.recommendations.management.commands.build_yelp_spark_stats."
+                "build_yelp_spark_stats",
+                return_value=expected,
+            ) as mocked:
+                call_command(
+                    "build_yelp_spark_stats",
+                    "--data-dir",
+                    "data/archive_4",
+                    "--output-dir",
+                    str(output_dir),
+                    "--top-k",
+                    "8",
+                )
+
+        mocked.assert_called_once_with(
+            data_dir="data/archive_4",
+            output_dir=str(output_dir),
+            top_k=8,
+        )
+
+    def test_build_yelp_spark_als_exports_latest_interactions_and_delegates(self) -> None:
+        business = YelpBusiness.objects.create(
+            business_id="spark-b1",
+            name="Spark Sushi",
+            categories="Restaurants, Sushi Bars",
+            stars=4.5,
+            review_count=12,
+            city="Philadelphia",
+            state="PA",
+            is_open=True,
+        )
+        user = User.objects.create(
+            username="spark-user",
+            password="secret123",
+            email="spark@example.com",
+            phone="13800138111",
+        )
+        YelpReview.objects.create(
+            review_id="spark-r1",
+            business=business,
+            user=user,
+            stars=2.0,
+            source="local",
+        )
+        YelpReview.objects.create(
+            review_id="spark-r2",
+            business=business,
+            user=user,
+            stars=5.0,
+            source="local",
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "yelp_als_userrec.json"
+            captured: dict[str, str] = {}
+
+            def _fake_build(**kwargs):
+                captured["interactions_path"] = str(kwargs["interactions_path"])
+                payload = Path(kwargs["interactions_path"]).read_text(encoding="utf-8")
+                captured["payload"] = payload
+                Path(kwargs["output_path"]).write_text("{}", encoding="utf-8")
+                return Path(kwargs["output_path"])
+
+            with patch(
+                "apps.recommendations.management.commands.build_yelp_spark_als."
+                "build_yelp_als_recommendations",
+                side_effect=_fake_build,
+            ) as mocked:
+                call_command(
+                    "build_yelp_spark_als",
+                    "--output",
+                    str(output_path),
+                    "--rank",
+                    "12",
+                    "--max-iter",
+                    "6",
+                    "--reg-param",
+                    "0.2",
+                    "--top-k",
+                    "5",
+                )
+
+        mocked.assert_called_once()
+        self.assertIn('"user_id": "' + str(user.id) + '"', captured["payload"])
+        self.assertIn('"business_id": "spark-b1"', captured["payload"])
+        self.assertIn('"stars": 5.0', captured["payload"])

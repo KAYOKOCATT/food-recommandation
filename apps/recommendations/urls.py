@@ -12,6 +12,7 @@ from django.urls import path
 from apps.recommendations.views.charts import ChartView
 from apps.recommendations.views.yelp import (
     submit_yelp_review,
+    yelp_als_recommendations,
     yelp_business_detail,
     yelp_business_list,
     yelp_recommendations,
@@ -24,6 +25,7 @@ urlpatterns = [
     path("charts/dashboard/", ChartView.dashboard, name="dashboard"),
     path("yelp/restaurants/", yelp_business_list, name="yelp_business_list"),
     path("yelp/recommendations/", yelp_recommendations, name="yelp_recommendations"),
+    path("yelp/recommendations/als/", yelp_als_recommendations, name="yelp_als_recommendations"),
     path(
         "yelp/restaurants/<str:business_id>/",
         yelp_business_detail,

@@ -28,6 +28,7 @@ class YelpBusinessRecommendation:
 class YelpService:
     SIMILARITY_FILE = settings.BASE_DIR / "data" / "recommendations" / "yelp_content_itemcf.json"
     USERCF_FILE = settings.BASE_DIR / "data" / "recommendations" / "yelp_usercf.json"
+    ALS_FILE = settings.BASE_DIR / "data" / "recommendations" / "yelp_als_userrec.json"
 
     @classmethod
     def build_business_queryset(
@@ -180,6 +181,52 @@ class YelpService:
             return []
 
         source = Path(recommendation_file) if recommendation_file else cls.USERCF_FILE
+        try:
+            candidates = similarity_cache.get(source).get(str(user_id), [])
+        except (OSError, ValueError):
+            return []
+
+        seen_business_ids = set(
+            YelpReview.objects.filter(user_id=user_id).values_list(
+                "business__business_id",
+                flat=True,
+            )
+        )
+        businesses = YelpBusiness.objects.in_bulk(
+            [
+                candidate.item_id
+                for candidate in candidates
+                if candidate.item_id not in seen_business_ids
+            ],
+            field_name="business_id",
+        )
+
+        recommendations: list[YelpBusinessRecommendation] = []
+        for candidate in candidates:
+            if candidate.item_id in seen_business_ids:
+                continue
+            business = businesses.get(candidate.item_id)
+            if business is None:
+                continue
+            recommendations.append(
+                YelpBusinessRecommendation(business=business, score=candidate.score)
+            )
+            if len(recommendations) >= top_k:
+                break
+        return recommendations
+
+    @classmethod
+    def get_als_recommendations(
+        cls,
+        user_id: int,
+        *,
+        top_k: int = 20,
+        recommendation_file: str | Path | None = None,
+    ) -> list[YelpBusinessRecommendation]:
+        if top_k <= 0:
+            return []
+
+        source = Path(recommendation_file) if recommendation_file else cls.ALS_FILE
         try:
             candidates = similarity_cache.get(source).get(str(user_id), [])
         except (OSError, ValueError):

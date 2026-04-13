@@ -127,3 +127,38 @@ def yelp_recommendations(request: HttpRequest) -> HttpResponse:
             "has_recent_activity": has_recent_activity,
         },
     )
+
+
+def yelp_als_recommendations(request: HttpRequest) -> HttpResponse:
+    identity = require_identity(
+        request,
+        allow_local_user=True,
+        allow_yelp_demo_user=True,
+    )
+    if isinstance(identity, JsonResponse):
+        return identity
+    if isinstance(identity, HttpResponse):
+        return identity
+
+    recommendations = YelpService.get_als_recommendations(
+        identity.user.id,
+        top_k=12,
+    )
+    if recommendations:
+        return render(
+            request,
+            "recommendations/yelp_als_recommendations.html",
+            {
+                "recommendations": recommendations,
+                "used_fallback": False,
+            },
+        )
+
+    return render(
+        request,
+        "recommendations/yelp_als_recommendations.html",
+        {
+            "recommendations": YelpService.get_popular_recommendations(top_k=12),
+            "used_fallback": True,
+        },
+    )
