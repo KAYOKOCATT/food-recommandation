@@ -198,6 +198,25 @@ export function loginForm() {
 
   return {
     ...component,
+    isAssistMenuOpen: false,
+    showYelpPicker: false,
+
+    toggleAssistMenu() {
+      this.isAssistMenuOpen = !this.isAssistMenuOpen;
+      if (!this.isAssistMenuOpen) {
+        this.showYelpPicker = false;
+      }
+    },
+
+    closeAssistMenu() {
+      this.isAssistMenuOpen = false;
+      this.showYelpPicker = false;
+    },
+
+    toggleYelpPanel() {
+      this.isAssistMenuOpen = true;
+      this.showYelpPicker = !this.showYelpPicker;
+    },
 
     async loginYelpDemo() {
       if (!this.formData.selectedYelpUser) {
@@ -217,6 +236,7 @@ export function loginForm() {
       this.isSubmitting = true;
       try {
         const response = await post(url, payload);
+        this.closeAssistMenu();
         redirectWithNotification(response, response.msg || "登录成功");
       } catch (error) {
         this.showNotification(
