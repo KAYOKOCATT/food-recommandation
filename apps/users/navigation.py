@@ -77,7 +77,7 @@ def login_source_label(login_source: str | None) -> str:
     labels = {
         LOGIN_SOURCE_LOCAL: "本地用户",
         LOGIN_SOURCE_YELP_DEMO: "Yelp 演示",
-        LOGIN_SOURCE_ADMIN_DEMO: "管理员演示",
+        LOGIN_SOURCE_ADMIN_DEMO: "管理员",
     }
     return labels.get(login_source or "", "访客")
 
