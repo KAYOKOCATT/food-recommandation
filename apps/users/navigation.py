@@ -70,6 +70,9 @@ def build_navigation(identity: SessionIdentity) -> list[dict[str, Any]]:
             ),
         )
 
+    if identity.is_local_user:
+        items[1]["items"].insert(1, _item("usercf_recommendations", "为您推荐", "uim uim-favorite"))
+
     return items
 
 
