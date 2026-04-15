@@ -32,7 +32,7 @@
                 </div>
                 <p class="mb-3">{{ business.categories|default:"暂无分类信息" }}</p>
                 <div class="row text-muted">
-                  <div class="col-md-4 mb-2">评论数：{{ business.review_count }}</div>
+                  <div class="col-md-4 mb-2">评论数：{{ business.review_count|add:business.aggregated_review_count }}</div>
                   <div class="col-md-4 mb-2">站内已存评论：{{ business.aggregated_review_count }}</div>
                   <div class="col-md-4 mb-2">
                     状态：{% if business.is_open %}营业中{% else %}已关闭{% endif %}
